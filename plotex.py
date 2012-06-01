@@ -171,12 +171,19 @@ class Graph:
         self.seenmaxes = set()
         self.maxls = []
 
-    def run(self, actions, limit=10000):
+    def run(self, actions, limit=10000, noopt=False):
         '''run(): Do the run. The results are stored within the Graph.
         '''
+        improveactions = actions
+        changeactions = actions
+        if (not noopt):
+            improveactions = [ action for action in actions if (action.equivtype != EQUIV_LOSS) ]
+            changeactions = [ action for action in actions if (action.equivtype in (EQUIV_LOSS, EQUIV_UNKNOWN)) ]
+            #print '%d actions filtered to %d improve, %d change' % (len(actions), len(improveactions), len(changeactions))
+        
         newstates = []
         for state in self.startstates:
-            newstate = self.find_maximal_state(state, actions)
+            newstate = self.find_maximal_state(state, improveactions)
             if (newstate in newstates):
                 continue
             newstates.append(newstate)
@@ -193,11 +200,11 @@ class Graph:
             oldnode = self.states[oldstate]
             self.maxls.append(oldstate)
             
-            for action in actions:
+            for action in changeactions:
                 newstate = action(oldstate)
                 if (not newstate):
                     continue
-                maxstate = self.find_maximal_state(newstate, actions)
+                maxstate = self.find_maximal_state(newstate, improveactions)
                 if (maxstate == oldstate):
                     continue
                 if (maxstate in oldnode.ancestors):
@@ -798,7 +805,16 @@ class Test:
             if (ls):
                 return False
         return True
-      
+
+# When running, it is handy to know whether a given action will strictly
+# improve the state (stay in the same maximal class), or always lose
+# something (a different maximal class). Often, though, we don't know
+# either.
+EQUIV_UNKNOWN = '????'   # We don't know
+EQUIV_SAME =    'SAME'   # Does not change the state at all
+EQUIV_IMPROVE = 'IMPR'   # Definitely an improvement
+EQUIV_LOSS =    'LOSS'   # Definitely a loss of something
+
 class Action:
     '''Action: An abstract action in a scenario. Calling Action(State)
     will return a new State, or None if the Action isn't possible in that
@@ -806,6 +822,7 @@ class Action:
     '''
     name = '???'
     scenario = None
+    equivtype = EQUIV_UNKNOWN
     unnamedcount = 0
     def __repr__(self):
         return '<Action "%s">' % (self.name,)
@@ -832,6 +849,20 @@ class Set(Action):
     def __init__(self, **dic):
         self.typelist = infer_typelist(dic)
         self.params = dic
+        allbool = True
+        pos = 0
+        for (key, val) in dic.items():
+            if (self.typelist[key] is not bool):
+                allbool = False
+                break
+            if ((not key.startswith('_') and val)
+                or (key.startswith('_') and not val)):
+                pos += 1
+        if (allbool):
+            if (pos == len(dic)):
+                self.equivtype = EQUIV_IMPROVE
+            else:
+                self.equivtype = EQUIV_LOSS
     def __call__(self, state):
         dic = dict(state.dic)
         for (key, val) in self.params.items():
@@ -849,6 +880,7 @@ class Reset(Action):
         return self.new_state(dic)
 
 class Has(Action):
+    equivtype = EQUIV_SAME
     def __init__(self, **dic):
         self.typelist = infer_typelist(dic)
         self.params = dic
@@ -863,6 +895,7 @@ class Has(Action):
         return state
 
 class HasAny(Action):
+    equivtype = EQUIV_SAME
     def __init__(self, **dic):
         self.typelist = infer_typelist(dic)
         self.params = dic
@@ -880,6 +913,14 @@ class Lose(Action):
     def __init__(self, *keys):
         self.typelist = {}
         self.keys = keys
+        pos = 0
+        for key in keys:
+            if (not key.startswith('_')):
+                pos += 1
+        if (pos > 0):
+            self.equivtype = EQUIV_LOSS
+        else:
+            self.equivtype = EQUIV_IMPROVE
     def __call__(self, state):
         dic = dict(state.dic)
         for key in self.keys:
@@ -890,6 +931,7 @@ class Lose(Action):
         return self.new_state(dic)
 
 class Once(Action):
+    equivtype = EQUIV_LOSS
     def __init__(self, key=None):
         if (isinstance(key, Action)):
             self.typelist = merge_typelists_of([key])
@@ -933,6 +975,10 @@ class Increment(Action):
         self.typelist = { key: int }
         self.key = key
         self.limit = limit
+        if (not key.startswith('_')):
+            self.equivtype = EQUIV_IMPROVE
+        else:
+            self.equivtype = EQUIV_LOSS
     def __call__(self, state):
         dic = dict(state.dic)
         val = dic.get(self.key, 0)
@@ -946,6 +992,10 @@ class Decrement(Action):
         self.typelist = { key: int }
         self.key = key
         self.limit = limit
+        if (not key.startswith('_')):
+            self.equivtype = EQUIV_LOSS
+        else:
+            self.equivtype = EQUIV_IMPROVE
     def __call__(self, state):
         dic = dict(state.dic)
         val = dic.get(self.key, 0)
@@ -979,6 +1029,7 @@ class Exclude(Action):
         return self.new_state(dic)
 
 class Count(Action):
+    equivtype = EQUIV_SAME
     def __init__(self, key, count):
         self.typelist = { key: set }
         self.key = key
@@ -990,6 +1041,7 @@ class Count(Action):
         return state
 
 class HasDifferent(Action):
+    equivtype = EQUIV_SAME
     def __init__(self, key, *vals):
         self.typelist = { key: str }
         self.key = key
@@ -1006,6 +1058,17 @@ class Chain(Action):
     def __init__(self, *actions):
         self.typelist = merge_typelists_of(actions)
         self.actions = actions
+        losses = 0
+        improves = 0
+        for action in actions:
+            if (action.equivtype == EQUIV_LOSS):
+                losses += 1
+            if (action.equivtype in (EQUIV_SAME, EQUIV_IMPROVE)):
+                improves += 1
+        if (losses):
+            self.equivtype = EQUIV_LOSS
+        elif (improves == len(actions)):
+            self.equivtype = EQUIV_IMPROVE
     def subactions(self):
         return self.actions
     def __call__(self, state):
@@ -1091,6 +1154,9 @@ def shell(scenario):
                     action='append', dest='histories', metavar='ACTIONS',
                     default=[],
                     help='display only states that passed through this action')
+    popt.add_option('--noopt',
+                    action='store_true', dest='noopt',
+                    help='do not optimize the run based on action type')
 
     (opts, args) = popt.parse_args()
 
@@ -1120,7 +1186,7 @@ def shell(scenario):
             actions = test.actions()
             actions.sort(key=lambda ac:ac.name)
             graph = Graph(scenario, test.startstates())
-            graph.run(actions, limit=opts.genlimit)
+            graph.run(actions, limit=opts.genlimit, noopt=opts.noopt)
             if test.verify(graph):
                 print '%s: pass' % (test.name,)
             else:
@@ -1138,7 +1204,7 @@ def shell(scenario):
     actions = [ action for action in scenario._actionmap.values() if action not in blockactions ]
     actions.sort(key=lambda ac:ac.name)
     graph = Graph(scenario, startstates)
-    graph.run(actions, limit=opts.genlimit)
+    graph.run(actions, limit=opts.genlimit, noopt=opts.noopt)
     if (withholdactions):
         ls = list(graph.allstates)
         ls.reverse()
@@ -1153,7 +1219,7 @@ def shell(scenario):
         for action in withholdactions:
             actions.append(action)
         graph = Graph(scenario, betterls)
-        graph.run(actions, limit=opts.genlimit)
+        graph.run(actions, limit=opts.genlimit, noopt=opts.noopt)
 
     filters = []
     for val in opts.filters:
