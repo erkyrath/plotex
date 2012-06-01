@@ -1,5 +1,5 @@
 # PlotEx: a tool for exploring puzzle plot constraints
-#   Version 1.0.2
+#   Version 1.1.0
 #   Andrew Plotkin <erkyrath@eblong.com>
 #   This script is in the public domain.
 #
@@ -128,6 +128,21 @@ def parse_actions(scenario, optls):
             res.add(action)
     return res
 
+def parse_qualities(scenario, optls):
+    '''Given a list of strings (as given on the command line), parse them
+    as qualities. Arguments can be separate strings or comma-separated.
+    Unrecognized qualities throw exceptions.
+    '''
+    res = set()
+    for val in optls:
+        ls = [ key.strip() for key in val.split(',') ]
+        for key in ls:
+            val = scenario._typemap.get(key)
+            if (not val):
+                raise Exception('No such quality: "%s"' % (key,))
+            res.add(key)
+    return res
+
 def parse_tests(scenario, optls):
     '''Given a list of strings (as given on the command line), parse them
     as tests. Arguments can be separate strings or comma-separated.
@@ -152,51 +167,124 @@ class Graph:
         self.scenario = scenario
         self.startstates = states
         self.states = {}
-        self.allstates = []
-        self.generations = []
-        
+        self.statels = []
+        self.seenmaxes = set()
+        self.maxls = []
+
     def run(self, actions, limit=10000):
+        '''run(): Do the run. The results are stored within the Graph.
+        '''
         newstates = []
-        for newstate in self.startstates:
+        for state in self.startstates:
+            newstate = self.find_maximal_state(state, actions)
+            if (newstate in newstates):
+                continue
             newstates.append(newstate)
-            self.allstates.append(newstate)
-            self.states[newstate] = GraphNode(newstate)
-            
+            self.seenmaxes.add(newstate)
+            newnode = self.states[newstate]
+            newnode.history = self.states[state].maxing_actions
+
         while (newstates):
-            if (len(self.states) >= limit):
+            if (len(self.seenmaxes) >= limit):
                 print 'WARNING: more than', limit, 'states! Stopping.'
                 break
+            
             oldstate = newstates.pop(0)
+            oldnode = self.states[oldstate]
+            self.maxls.append(oldstate)
+            
             for action in actions:
-                oldnode = self.states[oldstate]
                 newstate = action(oldstate)
                 if (not newstate):
                     continue
-                if (oldstate == newstate or newstate in oldnode.ancestors):
+                maxstate = self.find_maximal_state(newstate, actions)
+                if (maxstate == oldstate):
                     continue
-                if (newstate <= oldstate):
+                if (maxstate in oldnode.ancestors):
                     continue
 
-                newnode = self.states.get(newstate)
-                if (newnode):
-                    newnode.ancestors = newnode.ancestors.union(oldnode.ancestors)
+                aclist = (action,) + self.states[newstate].maxing_actions
+                maxnode = self.states[maxstate]
+
+                if (maxstate in self.seenmaxes):
+                    maxnode.ancestors.update(oldnode.ancestors)
+                    maxnode.ancestors.add(oldstate)
                 else:
-                    newnode = GraphNode(newstate, oldnode.ancestors.union([newstate]))
-                    newnode.history = oldnode.history + (action,)
-                    newstates.append(newstate)
-                    self.allstates.append(newstate)
-                    self.states[newstate] = newnode
+                    newstates.append(maxstate)
+                    self.seenmaxes.add(maxstate)
+                    maxnode.history = oldnode.history + aclist
+                    maxnode.ancestors.update(oldnode.ancestors)
+                    maxnode.ancestors.add(oldstate)
 
-                oldnode.children.append( (action, newstate) )
-                newnode.parents.append( (action, oldstate) )
+                oldnode.children.append( (aclist, maxstate) )
+                maxnode.parents.append( (aclist, oldstate) )
             
+    def find_maximal_state(self, state, actions):
+        '''Do every possible actions that is strictly an improvement --
+        that is, every action that produces a better state. Return the
+        resulting state.
+        '''
+        node = self.states.get(state)
+        if (node):
+            return node.maximal
+            
+        statechain = []
+        actchain = []
+        while True:
+            node = GraphNode(state)
+            self.states[state] = node
+            self.statels.append(state)
+            statechain.append(state)
+            
+            found_improvement = False
+            for action in actions:
+                newstate = action(state)
+                if (not newstate):
+                    continue
+                if (newstate == state):
+                    continue
+                if not(newstate > state):
+                    continue
+                
+                # That action was an improvement
+                actchain.append(action)
+                found_improvement = True
+                
+                if (newstate in self.states):
+                    # We've run into a known state. (Might be maximal, or
+                    # it might have its own maximal state.)
+                    gotstate = newstate
+                    gotnode = self.states[gotstate]
+                    pos = 0
+                    for newstate in statechain:
+                        newnode = self.states[newstate]
+                        newnode.maximal = gotnode.maximal
+                        newnode.maxing_actions = tuple(actchain[pos:]) + gotnode.maxing_actions
+                        pos = pos+1
+                    return gotnode.maximal
+                    
+                state = newstate
+                break
+
+            if (not found_improvement):
+                # This state is maximal.
+                pos = 0
+                for newstate in statechain:
+                    newnode = self.states[newstate]
+                    newnode.maximal = state
+                    newnode.maxing_actions = tuple(actchain[pos:])
+                    pos = pos+1
+                self.states[state].is_maximal = True
+                return state
+                
 
     def has(self, state):
         return self.states.has_key(state)
-    
-    def display(self, showmed=False, showin=False, showout=False, showcount=False, filters=[], histories=[]):
+
+    def showlist(self, showmed=True, filters=[], histories=[]):
         outls = []
-        for state in self.allstates:
+        
+        for state in self.maxls:
             node = self.states[state]
             if (not showmed):
                 if (node.children):
@@ -228,28 +316,44 @@ class Graph:
                     if (state2 < state1):
                         trumped.add(state2)
 
+        return (outls, trumped)
+    
+    def display(self, showmed=False, showin=False, showout=False, showdiff=False, showcount=False, filters=[], histories=[]):
+        (outls, trumped) = self.showlist(showmed, filters, histories)
+
         if (not showcount):
+            difffrom = None
+            if (showdiff and len(outls) >= 2):
+                difffrom = outls[0]
+                for state in outls[1:]:
+                    difffrom = difffrom & state
+                print '(common state: %s)' % (difffrom,)
+                print
+                    
             for state in outls:
                 node = self.states[state]
                 val = ''
                 if (trumped is not None and state not in trumped):
                     val = '*'
-                print val+str(state)
+                if (difffrom is None):
+                    print val+str(state)
+                else:
+                    print val+state.printdiff(difffrom)
                 acs = [ ac.name for ac in node.history]
                 print '  (%d): %s' % (len(node.history), ', '.join(acs),)
                 #print '  ### ancs:', list(node.ancestors)
                 if (showin):
-                    subls = [ '<= %s : %s' % (substate, ac.name) for (ac, substate) in node.parents ]
+                    subls = [ '<= %s : %s' % (substate, ', '.join([ ac.name for ac in acls ])) for (acls, substate) in node.parents ]
                     for val in subls:
                         print '    %s' % (val,)
                 if (showout):
-                    subls = [ '=> %s : %s' % (ac.name, substate) for (ac, substate) in node.children ]
+                    subls = [ '=> %s : %s' % (', '.join([ ac.name for ac in acls ]), substate) for (acls, substate) in node.children ]
                     for val in subls:
                         print '    %s' % (val,)
                 print
                 
         if (showmed):
-            summary = '%d total states' % (len(outls),)
+            summary = '%d maximal states' % (len(outls),)
         else:
             summary = '%d terminal states' % (len(outls),)
         if (trumped):
@@ -261,20 +365,54 @@ class Graph:
             subls = [ ac.name for ac in histories ]
             subls.sort()
             summary += ' with ' + ', '.join(subls)
+        #print '### (%d intermediate states)' % (len(self.states),)
         print summary, 'reached'
+                    
+    def writegv(self, filename, filters=[], histories=[]):
+        (outls, trumped) = self.showlist()
+        (colorls, _) = self.showlist(True, filters, histories)
+
+        nodenames = {}
+        pos = 1
+        for state in outls:
+            nodenames[state] = str(pos)
+            pos = pos+1
+
+        fl = open(filename, 'w')
+        fl.write('digraph PlotEx {\n')
+        fl.write('\n')
+        for state in outls:
+            node = self.states[state]
+            penwidth = 1
+            if (not node.children):
+                penwidth = 3
+            color = 'gray75'
+            if (state in colorls):
+                color = 'forestgreen'
+            fl.write('# %s\n' % (state,))
+            fl.write('"%s" [ label="", shape=circle, width=0.2, style=filled, fillcolor=%s, penwidth=%d ];\n' % (nodenames[state], color, penwidth))
+            fl.write('\n')
+            for (acls, child) in node.children:
+                label = '\\n'.join([ ac.name for ac in acls ])
+                fl.write('  "%s" -> "%s" [ label="%s" ];\n' % (nodenames[state], nodenames[child], label))
+            fl.write('\n')
+            fl.write('\n')
+                                                     
+        fl.write('}\n')
+
 
 class GraphNode:
     '''GraphNode: Context information for a single state in a Graph.
     (We never store information in the State itself -- that's immutable.)
     '''
-    def __init__(self, state, ancestors=None):
+    def __init__(self, state):
         self.state = state
-        if (ancestors is None):
-            ancestors = frozenset([state])
-        self.ancestors = ancestors
-        self.parents = []
+        self.maximal = None
+        self.is_maximal = False
         self.children = []
+        self.parents = []
         self.history = ()
+        self.ancestors = set()
             
 class State:
     '''State: One state in the plot diagram. A state is set up with a
@@ -283,10 +421,19 @@ class State:
     The most interesting thing you can do with states is compare them.
     State1 < state2 if state1's qualities are a subset of state2's.
     This is a partial ordering; it is not necessarily true that
-    (x < y or x == y or x > y). Sometimes two states are just different.
+    (x < y or x == y or x > y). Sometimes two states are just different,
+    in non-overlapping ways.
+
+    You can also compute state1 & state2, which is the greatest common
+    factor (the largest state which is <= both of them). (This doesn't
+    quite work out for negative-sense string qualities, but what does,
+    really?)
+
+    (Any operation between two states must be within a common Scenario.)
     '''
     name = None
     scenario = None
+    
     def __init__(self, **dic):
         self.typelist = infer_typelist(dic)
         self.hashcache = None
@@ -295,6 +442,7 @@ class State:
             return
         self.dic = dic
         self.canonize()
+        
     def __repr__(self):
         keyls = self.dic.keys()
         keyls.sort(key=lambda x:x.upper())
@@ -314,6 +462,60 @@ class State:
             return '<"%s": %s>' % (self.name, joined)
         else:
             return '<%s>' % (joined,)
+
+    def printdiff(self, other):
+        '''Return a string representation of the state, not by itself, but
+        in comparison to some other state. Only quality differences will be
+        displayed.
+        '''
+        keyset = set(self.dic.keys()).union(other.dic.keys())
+        keyls = list(keyset)
+        keyls.sort(key=lambda x:x.upper())
+        ls = []
+        for key in keyls:
+            typ = self.scenario._typemap[key]
+            sense = self.scenario._sensemap[key]
+            if (typ is bool):
+                val = self.dic.get(key)
+                otherval = other.dic.get(key)
+                if (val and not otherval):
+                    ls.append('+%s' % (key,))
+                elif (otherval and not val):
+                    ls.append('-%s' % (key,))
+            elif (typ is str):
+                val = self.dic.get(key)
+                otherval = other.dic.get(key)
+                if (val and otherval != val):
+                    ls.append('%s=%s' % (key, val))
+                elif (otherval and not val):
+                    ls.append('-%s' % (key,))
+            elif (typ is int):
+                val = self.dic.get(key, 0)
+                otherval = other.dic.get(key, 0)
+                if (val > otherval):
+                    ls.append('%s=+%d' % (key, val-otherval))
+                elif (otherval and not val):
+                    ls.append('%s=-%d' % (key, otherval-val))
+            elif (typ is set):
+                val = self.dic.get(key, set())
+                otherval = other.dic.get(key, set())
+                subls = []
+                for subkey in (val - otherval):
+                    subls.append('+'+subkey)
+                for subkey in (otherval - val):
+                    subls.append('-'+subkey)
+                subls.sort()
+                if (subls):
+                    sublsval = '[' + ','.join(str(subval) for subval in subls) + ']'
+                    ls.append('%s=%s' % (key, sublsval))
+            else:
+                ls.append('???')
+        joined = ' '.join(ls)
+        if (self.name):
+            return '<"%s": %s>' % (self.name, joined)
+        else:
+            return '<%s>' % (joined,)
+
     def __eq__(self, other):
         return (self.dic == other.dic)
     def __ne__(self, other):
@@ -326,12 +528,54 @@ class State:
         return (self != other) and other.contains(self)
     def __le__(self, other):
         return other.contains(self)
+
+    def __and__(self, other):
+        dic = {}
+        keyset = set(self.dic.keys()).union(other.dic.keys())
+        for key in keyset:
+            typ = self.scenario._typemap[key]
+            sense = self.scenario._sensemap[key]
+            val = self.dic.get(key)
+            otherval = other.dic.get(key)
+            if (sense):
+                if ((val is None) or (otherval is None)):
+                    continue
+                if (typ is bool):
+                    dic[key] = (val and otherval)
+                if (typ is int):
+                    dic[key] = min(val, otherval)
+                if (typ is set):
+                    dic[key] = val.intersection(otherval)
+                if (typ is str):
+                    if (val == otherval):
+                        dic[key] = val
+            else:
+                if (val is None):
+                    dic[key] = otherval
+                    continue
+                if (otherval is None):
+                    dic[key] = val
+                    continue
+                if (typ is bool):
+                    dic[key] = (val or otherval)
+                if (typ is int):
+                    dic[key] = max(val, otherval)
+                if (typ is set):
+                    dic[key] = val.union(otherval)
+                if (typ is str):
+                    if (val == otherval):
+                        dic[key] = val
+        res = State(**dic)
+        res.scenario = self.scenario
+        return res
+
     def __hash__(self):
         if (self.hashcache is None):
             ls = [ pair for pair in self.dic.items() ]
             ls.sort()
             self.hashcache = hash(tuple(ls))
         return self.hashcache
+
     def canonize(self):
         ls = [ key for (key, val) in self.dic.items() if not val ]
         for key in ls:
@@ -340,11 +584,32 @@ class State:
         for key in ls:
             orig = self.dic[key]
             self.dic[key] = frozenset(orig)
+
     def copy(self):
         res = State()
         res.scenario = self.scenario
         res.dic = dict(self.dic)
         return res
+
+    def addquality(self, key, val):
+        '''Return a new state which is a copy of this one, with one quality
+        added (or changed). The value must be of the correct type, or castable
+        to it.
+        '''
+        typ = self.scenario._typemap[key]
+        dic = dict(self.dic)
+        if (typ is bool):
+            dic[key] = bool(val)
+        elif (typ is int):
+            dic[key] = int(val)
+        elif (typ is str):
+            dic[key] = str(val)
+        elif (typ is set):
+            dic[key] = dic.get(key, set()).union(set[val])
+        res = State(**dic)
+        res.scenario = self.scenario
+        return res
+
     def contains(self, other):
         '''X.contains(Y) is the basic comparison -- X is a subset of (or
         equal to) Y.
@@ -360,6 +625,7 @@ class State:
             if (not other.atleast(key, ival)):
                 return False
         return True
+        
     def atleast(self, key, val):
         '''X.atleast(key, val) tests whether the key quality is val or better.
         (This does *not* account for negative-sense keys, so don't call it
@@ -381,6 +647,7 @@ class State:
             if (ival != val):
                 return False
         return True
+    
     def atmost(self, key, val):
         '''X.atmost(key, val) tests whether the key quality is val or worse.
         (Call this for negative-sense keys.)
@@ -773,6 +1040,10 @@ def shell(scenario):
                     action='append', dest='startstates', metavar='STATES',
                     default=[],
                     help='state(s) to begin at (default: Start)')
+    popt.add_option('--startwith',
+                    action='append', dest='startwith', metavar='QUALITIES',
+                    default=[],
+                    help='extra boolean quality to add to start states')
     popt.add_option('--block',
                     action='append', dest='blockactions', metavar='ACTIONS',
                     default=[],
@@ -803,9 +1074,15 @@ def shell(scenario):
     popt.add_option('-a', '--showall',
                     action='store_true', dest='showall',
                     help='combines --showmed --showin --showout')
+    popt.add_option('-d', '--diff',
+                    action='store_true', dest='showdiff',
+                    help='display only the differences between the found states')
     popt.add_option('-c', '--count',
                     action='store_true', dest='showcount',
                     help='display only the number of states found')
+    popt.add_option('--graph',
+                    action='store', dest='graph', metavar='FILE',
+                    help='create a graphviz (.gv) file')
     popt.add_option('-f', '--filter',
                     action='append', dest='filters', metavar='QUALITIES',
                     default=[],
@@ -825,6 +1102,9 @@ def shell(scenario):
     if (not opts.startstates):
         opts.startstates.append('Start')
     startstates = parse_states(scenario, opts.startstates)
+    if (opts.startwith):
+        for key in parse_qualities(scenario, opts.startwith):
+            startstates = [ state.addquality(key, True) for state in startstates ]
 
     blockactions = parse_actions(scenario, opts.blockactions)
 
@@ -882,7 +1162,9 @@ def shell(scenario):
     histories = []
     if (opts.histories):
         histories = parse_actions(scenario, opts.histories)
-    graph.display(opts.showmed, opts.showin, opts.showout, opts.showcount, filters, histories)
+    graph.display(opts.showmed, opts.showin, opts.showout, opts.showdiff, opts.showcount, filters, histories)
+    if (opts.graph):
+        graph.writegv(opts.graph, filters, histories)
 
 class ScenarioClass:
     __metaclass__ = TrackMetaClass
