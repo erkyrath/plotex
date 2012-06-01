@@ -859,9 +859,8 @@ class Set(Action):
             else:
                 self.equivtype = EQUIV_LOSS
     def __call__(self, state):
-        dic = dict(state.dic)
-        for (key, val) in self.params.items():
-            dic[key] = val
+        dic = state.dic.copy()
+        dic.update(self.params)
         return State(**dic)
 
 class Reset(Action):
@@ -917,10 +916,11 @@ class Lose(Action):
         else:
             self.equivtype = EQUIV_IMPROVE
     def __call__(self, state):
-        dic = dict(state.dic)
+        olddic = state.dic
         for key in self.keys:
-            if (not dic.has_key(key)):
+            if (key not in olddic):
                 return
+        dic = olddic.copy()
         for key in self.keys:
             dic.pop(key)
         return State(**dic)
