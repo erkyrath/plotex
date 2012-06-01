@@ -839,13 +839,6 @@ class Action:
         if ls:
             for ac in ls:
                 ac.set_scenario(scen)
-    def new_state(self, dic):
-        '''If an Action has to generate a new State, it calls this factory
-        method. This ensures that the State's scenario field is set
-        correctly.
-        '''
-        res = State(**dic)
-        return res
 
 class Set(Action):
     def __init__(self, **dic):
@@ -869,7 +862,7 @@ class Set(Action):
         dic = dict(state.dic)
         for (key, val) in self.params.items():
             dic[key] = val
-        return self.new_state(dic)
+        return State(**dic)
 
 class Reset(Action):
     def __init__(self, **dic):
@@ -879,7 +872,7 @@ class Reset(Action):
         dic = {}
         for (key, val) in self.params.items():
             dic[key] = val
-        return self.new_state(dic)
+        return State(**dic)
 
 class Has(Action):
     equivtype = EQUIV_SAME
@@ -930,7 +923,7 @@ class Lose(Action):
                 return
         for key in self.keys:
             dic.pop(key)
-        return self.new_state(dic)
+        return State(**dic)
 
 class Once(Action):
     equivtype = EQUIV_LOSS
@@ -966,7 +959,7 @@ class Once(Action):
             if (not dic.has_key(self.key)):
                 return
             dic[self.key] = False
-        newstate = self.new_state(dic)
+        newstate = State(**dic)
         if (not self.action):
             return newstate
         else:
@@ -987,7 +980,7 @@ class Increment(Action):
         if (self.limit is not None and val >= self.limit):
             return
         dic[self.key] = val+1
-        return self.new_state(dic)
+        return State(**dic)
 
 class Decrement(Action):
     def __init__(self, key, limit=0):
@@ -1004,7 +997,7 @@ class Decrement(Action):
         if (self.limit is not None and val <= self.limit):
             return
         dic[self.key] = val-1
-        return self.new_state(dic)
+        return State(**dic)
 
 class Include(Action):
     def __init__(self, key, *vals):
@@ -1015,7 +1008,7 @@ class Include(Action):
         dic = dict(state.dic)
         val = dic.get(self.key, frozenset())
         dic[self.key] = val.union(self.values)
-        return self.new_state(dic)
+        return State(**dic)
 
 class Exclude(Action):
     def __init__(self, key, *vals):
@@ -1028,7 +1021,7 @@ class Exclude(Action):
         if (not val.issuperset(self.values)):
             return
         dic[self.key] = val.difference(self.values)
-        return self.new_state(dic)
+        return State(**dic)
 
 class Count(Action):
     equivtype = EQUIV_SAME
