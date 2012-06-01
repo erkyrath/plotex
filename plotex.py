@@ -588,13 +588,12 @@ class State:
         return self.hashcache
 
     def canonize(self):
-        ls = [ key for (key, val) in self.dic.items() if not val ]
-        for key in ls:
-            self.dic.pop(key)
-        ls = [ key for (key, val) in self.dic.items() if type(val) in (tuple, list) ]
-        for key in ls:
-            orig = self.dic[key]
-            self.dic[key] = frozenset(orig)
+        dic = self.dic
+        for (key, val) in dic.items():
+            if (not val):
+                del dic[key]
+            elif (type(val) in (tuple, list)):
+                dic[key] = frozenset(val)
 
     def copy(self):
         res = State()
