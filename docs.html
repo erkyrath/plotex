@@ -1,0 +1,500 @@
+<!doctype HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>PlotEx: Reference Documentation</title>
+<style type="text/css">
+pre { margin-left: 3em; }
+dl { margin-left: 3em; }
+dt { font-family: monospace; }
+</style>
+</head>
+<body>
+
+<h2>PlotEx: Reference Documentation</h2>
+
+<ul>
+<li><a href="index.html">Learn why PlotEx exists</a>
+<li><a href="plotex.py">Look at the PlotEx script</a> (or, <a href="plotex3.py">Python 3</a> version)
+<li>Look at the <a href="enchanter.py">Enchanter example</a> or the <a href="blank.py">blank example</a>
+<li><a href="plotex.tar.gz">Download the script with all sample scenarios</a>
+</ul>
+
+<p>
+PlotEx allows you to build a web of puzzle and event constraints (what needs to happen before what, what requires what tools, and so on). Then it computes all the consequences of the scenario; it shows you what states can and cannot be reached.
+</p>
+
+<p>
+(See my <a href="index.html">long and discursive explanation of this idea.</a>)
+</p>
+
+<h3>Command-line options</h3>
+
+<p>
+To run PlotEx with the included sample scenario, just type
+</p>
+
+<pre>
+python plotex.py
+</pre>
+
+<p>
+(If you are a Python 3 user, you'll have to use the alternate version, <code>plotex3.py</code>. It's easiest to just copy it over <code>plotex.py</code>, so that the example scripts like <code>enchanter.py</code> can import it properly.)
+</p>
+
+<p>
+To run another scenario, just invoke it the same way:
+</p>
+
+<pre>
+python enchanter.py
+</pre>
+
+<p>
+Either way, invoking it without arguments gives the default output. PlotEx will start at the <code>Start</code> state, run as far as possible, and display all the final states (states from which no more actions are possible). For each final state it will display the actions that got there (and how many actions it took). An asterisk marks states which no other (displayed) state is better than.
+</p>
+
+<p>
+Note that if an argument accepts multiple values, you can use either multiple arguments ("--start S1 --start S2") or comma-separated arguments ("--start S1,S2").
+</p>
+
+<dl>
+<dt>-s, --start STATE(S)
+<dd>Begin in this state, rather than <code>Start</code>. You may give multiple states; PlotEx will assume they are all available to begin with.
+
+<dt>--block ACTION(S)
+<dd>Perform the run without permitting the named action (or actions).
+
+<dt>--withhold ACTION(S)
+<dd>Perform the run without permitting the named actions, as far as possible. Then continue the run with those actions back in. (This will produce the same states as --block, but the histories will only show the actions in the second phase. This may be useful, or it may not.)
+
+<dt>-f, --filter QUALITY(IES)
+<dd>Only show states that contain the named quantity (at better than False/0/None).
+
+<dt>-H, --history ACTION(S)
+<dd>Only show states in whose history the named action occurs. (Note that if there are several ways to reach a state, PlotEx only records one of them. So this argument may not work for optional actions.)
+
+<dt>-m, --showmed
+<dd>Show intermediate states as well as final states.
+
+<dt>--showin
+<dd>For each state, show the actions that led to it.
+
+<dt>--showout
+<dd>For each state, show the actions that led away from it.
+
+<dt>-a, --showall
+<dd>Show intermediate states, plus the in and out actions for every state.
+
+<dt>-c, --count
+<dd>Show only the number of states found, rather than displaying each one.
+
+<dt>-t, --test TEST(S)
+<dd>Perform each of the named tests. Show how many fail. (See Tests, below.) When running tests, most of the other arguments have no effect; only --genlimit is meaningful. (Start states, blocks, etc are defined by the individual tests.)
+
+<dt>-T, --alltests
+<dd>Perform all of the tests in the scenario file. Show how many fail.
+
+<dt>--genlimit NUMBER
+<dd>Normally, if the run generates more than 10000 states, PlotEx assumes you have an infinite loop and gives up. This argument allows you to raise (or lower) that limit.
+</dl>
+
+<h3>Setting up a PlotEx scenario</h3>
+
+<p>
+The easiest way to do this is to copy the <a href="blank.py">blank scenario example file</a>, and start filling it in. A minimal scenario looks like this:
+</p>
+
+<pre>
+from plotex import *
+
+class Scenario(ScenarioClass):
+
+    Start = State()
+
+    # Actions go here
+
+# This parses and carries out the command-line options, using the Scenario.
+shell(Scenario)
+</pre>
+
+<p>
+A scenario must be in the same directory as <code>plotex.py</code>. To run it, type
+</p>
+
+<pre>
+python yourscenario.py
+</pre>
+
+<h3>States</h3>
+
+<p>
+The simplest state looks like <code>State()</code>. This is a state with no qualities at all. Your <code>Start</code> state will often look like this, although it doesn't have to.
+</p>
+
+<p>
+A more complex state is defined with any number of keyword arguments. Each defines a quality. For example:
+</p>
+
+<pre>
+State(food=True, coin=3)
+State(name='fred', spells=['light', 'unlock'])
+</pre>
+
+<p>
+This defines a boolean quality <code>food</code>, and a numeric quality <code>coin</code>.
+</p>
+
+<p>
+Qualities can only have a few types:
+</p>
+
+<ul>
+<li>boolean: True or False. (In Python, these constants must be capitalized.) True is better than False.
+<li>number: An integer, 0 or up. (Negative numbers will confuse PlotEx, unfortunately.) Bigger numbers are better.
+<li>string: Any quoted string. Strings have no better/worse scale, except that any other string beats ''.
+<li>set: A list of strings, in square brackets. (This looks like a Python list, but PlotEx treats it as an unordered set.) A set is better than any subset of it.
+</ul>
+
+<p>
+A quality must have the same type everywhere in your scenario. You can't define one state with <code>State(food=True)</code>, and another with <code>State(food='cheese')</code>.
+</p>
+
+<p>
+An empty quality (False, 0, '', or []) is equivalent to leaving out the quality entirely. (Except that the type is checked. You could use this to type-define qualities, but there's really no need to.)
+</p>
+
+<p>
+Quality names are normally lower-case. (This isn't required, but in my examples I stick to the rule that qualities are lower-case, and states and actions are capitalized. I recommend you do to.)
+</p>
+
+<p>
+If a quality names begins with an underscore, it is considered to have an inverted scale. That is, <code>State(coin=2)</code> is better than <code>State(coin=1)</code>, which is better than <code>State()</code>. However, <code>State(_pain=1)</code> is better than <code>State(_pain=2)</code>; <code>State()</code> is better than either of them.
+</p>
+
+<p>
+(But you still can't use negative integers. Sorry.)
+</p>
+
+<h3>Actions</h3>
+
+<p>
+An action turns a state into another state, by changing its qualities. Some actions check for qualities first. If the check fails, the action does nothing to that state.
+</p>
+
+<p>
+Actions can be chained together. In fact, this is usually the way you construct conditional actions. You take a "check for condition" action and a "change some stuff" action, and chain them together. If one step in the chain fails, the whole chained action fails (and does nothing).
+</p>
+
+<p>
+These are the standard actions. You can also define your own, but that's Python work, and if you're that sort of person you can pick it up from the source code.
+</p>
+
+<p><strong>
+Set(qual=VALUE, qual=VALUE, ...)
+</strong></p>
+
+<p>
+Set some qualities. This always succeeds (even if the state already had those qualities at a different level, or the same level). You can set any number of qualities this way.
+</p>
+
+<p>
+Note that <code>Set(food=False)</code> will remove the (boolean) <code>food</code> quality entirely.
+</p>
+
+<p><strong>
+Reset(qual=VALUE, qual=VALUE, ...)
+</strong></p>
+
+<p>
+Clear the state out, and then set some qualities. This wipes the state completely; the output is the same no matter what the input state was.
+</p>
+
+<p><strong>
+Has(qual=VALUE, qual=VALUE, ...)
+</strong></p>
+
+<p>
+Check whether the state has all of the given qualities, <em>or better</em>. <code>Has(coin=1)</code> will check whether the state has at least one coin. On the other hand, <code>Has(_pain=2)</code> checks whether the state's pain is <em>at most</em> two. (Because <code>_pain</code> starts with an underscore, it has an inverted scale.)
+</p>
+
+<p>
+If the check succeeds, the state is returned unchanged. (This is only useful because of the <code>Chain</code> action. See below.) If the state doesn't have all of the qualities, the action fails.
+</p>
+
+<p>
+Note that checking <code>Has(flag=False)</code> is useless, because every state has a <code>flag</code> value of False or better. However, <code>Has(_flag=False)</code> does make sense, because <code>_flag</code> is inverted.
+</p>
+
+<p><strong>
+HasAny(qual=VALUE, qual=VALUE, ...)
+</strong></p>
+
+<p>
+Like <code>Has()</code>, but the state only needs to have <em>one</em> of the given qualities.
+</p>
+
+<p><strong>
+HasDifferent('qual', 'STR', 'STR', ...)
+</strong></p>
+
+<p>
+Checks whether the state's quality has a value different from all of the given strings. If it doesn't, or if the state lacks the quality entirely (or is ''), then the action fails.
+</p>
+
+<p>
+The quality must be a string quality. Because of the way Python works, the quality name (and all the strings) must be quoted.
+</p>
+
+<p><strong>
+Lose('qual', 'qual', ...)
+</strong></p>
+
+<p>
+If the state does not have all of the given qualities, the action fails. Otherwise, it loses them all. (Boolean qualities become False, numeric ones become 0, strings become '', sets become the empty set.)
+</p>
+
+<p>
+Here, again, the quality names must be quoted.
+</p>
+
+<p>
+<code>Lose(flag)</code> is equivalent to <code>Chain(Has(flag=True), Set(flag=False))</code>. But it's shorter.
+</p>
+
+<p><strong>
+Once()
+</strong></p>
+
+<p>
+Checks whether this action has ever succeeded before. If it never has, it succeeds now. All subsequent times, it fails. (This works by setting an inverted boolean quality.)
+</p>
+
+<p>
+You might say, for example, <code>Chain(Once(), Set(blessing=True))</code>. This action will set the <code>blessing</code> quality, but only once per game.
+</p>
+
+<p><strong>
+Once('_qual')
+</strong></p>
+
+<p>
+Same thing, but you specify the quality name. It must start with an underscore, and it must be quoted.
+</p>
+
+<p><strong>
+Once(ACTION)
+</strong></p>
+
+<p>
+Same thing, except you include the action to once-ify <em>inside</em> the <code>Once()</code> action. Usually this is simpler than chaining it. E.g., <code>Once(Set(blessing=True))</code>
+</p>
+
+<p><strong>
+Increment('qual', LIMIT)
+</strong></p>
+
+<p>
+If the given quality is LIMIT or more, this fails. Otherwise, it increases the quality by one. (It must be a numeric quality, of course.) The quality name must be quoted.
+</p>
+
+<p>
+If you write <code>Increment('coin', 10)</code> with no chained conditions, PlotEx will promptly take the action ten times in a row. (Players naturally want <em>all the coins</em>.) If that's your intent, it's easier to do <code>Set(coin=10)</code>. Otherwise, think about your preconditions.
+</p>
+
+<p><strong>
+Decrement('qual', LIMIT)
+</strong></p>
+
+<p>
+Same thing, except the quality decreases by one. You can omit the LIMIT, in which case it defaults to zero.
+</p>
+
+<p><strong>
+Include('qual', 'STR', 'STR', ...)
+</strong></p>
+
+<p>
+The given quality must be a set. This adds the given strings to the set, if they're not there already. This action always succeeds.
+</p>
+
+<p>
+The quality name (and all the strings) must be quoted.
+</p>
+
+<p><strong>
+Exclude('qual', 'STR', 'STR', ...)
+</strong></p>
+
+<p>
+If the set quality does not have all of the given strings, the action fails. If it does, it loses them.
+</p>
+
+<p><strong>
+Count('qual', NUMBER)
+</strong></p>
+
+<p>
+The given quality must be a set. This succeeds if the set has at least NUMBER strings in it.
+</p>
+
+<p><strong>
+Chain(ACTION, ACTION, ACTION...)
+</strong></p>
+
+<p>
+This is the one that ties them all together. It tries to perform each of the listed actions, in order, on the state. If any of them fail, the whole chain fails. If they all succeed, the final product is returned.
+</p>
+
+<p>
+Some examples from Enchanter:
+</p>
+
+<p>
+<code>Chain(Has(rezrov=True), Set(incourtyard=True))</code> -- If the player has the <code>rezrov</code> spell, set <code>incourtyard</code>, indicating that the player has access to the courtyard.
+</p>
+
+<p>
+<code>Chain(Lose('kulcad'), Set(melbor=True))</code> -- If the player has the <code>kulcad</code> spell, remove it, and then gain the <code>melbor</code> spell. (You can KULCAD the jewelled box to open it and access the contents. But KULCAD is a one-shot spell.) If the player doesn't have the <code>kulcad</code> quality, this action does nothing.
+</p>
+
+<p>
+<code>Chain(Has(intower=True), Has(gondar=True), HasAny(vaxum=True, cleesh=True), Set(krill=True))</code> -- Check that the player is in the tower, that the player has GONDAR, and that the player has <em>either</em> CLEESH or VAXUM. If all of those are true, set <code>krill</code>, indicating that the player has access to Krill.
+</p>
+
+<p><strong>
+Choice(ACTION, ACTION, ACTION...)
+</strong></p>
+
+<p>
+Try to perform each of the listed actions, in order. As soon as <em>one</em> of them succeeds, return the result. If they all fail, the whole action fails.
+</p>
+
+<h3>Tests</h3>
+
+<p>
+A test is essentially a complete invocation of PlotEx, wrapped up with some outcome conditions. When you invoke the test, it runs and verifies the outcome is what you expected.
+</p>
+
+<p>
+You can include some tests in your scenario; they're effectively unit tests of your story. If you alter one of your actions, you can re-test to see if the outcomes all still work (or don't work) correctly.
+</p>
+
+<p><strong>
+Test(can=ACTION)
+</strong></p>
+
+<p>
+Run through the scenario, starting with the <code>Start</code> state. Then see if the given action succeeds on any of the reachable states. (It doesn't have to succeed on all of them, just at least one.)
+</p>
+
+<p>
+For example, you might define <code>Test(can=Has(win=True))</code> to check whether some winning state is reachable.
+</p>
+
+<p>
+The actions have no effect on the scenario states (even actions like <code>Lose</code>). They're just checked to see whether they succeed or fail.
+</p>
+
+<p><strong>
+Test(cannot=ACTION)
+</strong></p>
+
+<p>
+Run through the scenario, and check that the action succeeds on <em>no</em> reachable states.
+</p>
+
+<p><strong>
+Test(gets='qual')
+</strong></p>
+
+<p>
+Run through the scenario, and see if any reachable state has the given quality. (At better than False/0/etc.)
+</p>
+
+<p><strong>
+Test(getsnot='qual')
+</strong></p>
+
+<p>
+Run through the scenario, and check that <em>no</em> reachable state has the given quality. (All states must lack it; or, equivelantly, have it at False/0/etc.)
+</p>
+
+<p><strong>
+Test(includes=ACTION)
+</strong></p>
+
+<p>
+Run through the scenario, and check whether any reachable state includes the action in its history. (That is, whether that action was taken in the process of reaching that state.)
+</p>
+
+<p>
+Note that if there are several ways to reach a state, PlotEx only records one of them. (It tries to minimize the number of actions.) So this test will be most useful for critical actions.
+</p>
+
+<p><strong>
+Test(excludes=ACTION)
+</strong></p>
+
+<p>
+Run through the scenario, and check that <em>no</em> reachable state has the action in its history.
+</p>
+
+<p><strong>
+Test(start=STATE, ...)<br>
+Test(start=[STATE, STATE, ...], ...)
+</strong></p>
+
+<p>
+By including <code>start=STATE</code> in any test, you can control where the test begins its run. The default is <code>Start</code>. You can also have it start with a bunch of states. 
+</p>
+
+<p>
+(These may be named states, or ones created on the spot. <code>start=State(food=True)</code> would start the test in a state with only the <code>food</code> quality.)
+</p>
+
+<p><strong>
+Test(block=ACTION, ...)<br>
+Test(block=[ACTION, ACTION, ...], ...)
+</strong></p>
+
+<p>
+By including <code>block=ACTION</code> in any test, you can mark the given action (or list of actions) as out-of-bounds for that test's run.
+</p>
+
+<p>
+Note that you can include multiple positive or negative criteria in the test. For example:
+</p>
+
+<p>
+<code>Test(gets='coin', includes=KillDragon)</code> -- Looks for a state that has the <code>coin</code> quality (greater than 0) <em>and</em> passed through the <code>KillDragon</code> action.
+</p>
+
+<p>
+<code>Test(gets=['food', 'lamp'])</code> -- Looks for a state that has both of those qualities.
+</p>
+
+<p>
+<code>Test(can=[Has('food'=True), Has('lamp'=True)])</code> -- Another way of doing the same thing.
+</p>
+
+<p>
+<code>Test(can=Has(win=True), excludes=AteMushroom)</code> -- Look at the list of states which have <code>win</code>; make sure <em>none</em> of them passed through the <code>AteMushroom</code> action.
+</p>
+
+<hr>
+<p>
+Last updated November 6, 2011.
+</p>
+
+<p>
+<em><a href="index.html">Learn why PlotEx exists</a></em>
+</p>
+
+<p>
+<em><a href="../home.html">Zarfhome</a></em>
+<em><a href="../sitemap.html#plotex">(map)</a></em>
+<em><a href="../cave/plotex.html">(down)</a></em>
+</p>
+
+</body>
+</html>

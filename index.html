@@ -1,0 +1,336 @@
+<!doctype HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>PlotEx: a tool for exploring puzzle plot constraints</title>
+<style type="text/css">
+pre { margin-left: 3em; }
+</style>
+</head>
+<body>
+
+<h2>PlotEx: a tool for exploring puzzle plot constraints</h2>
+
+<ul>
+<li><a href="docs.html">Read the PlotEx script documentation</a>
+<li><a href="plotex.py">Look at the PlotEx script</a> (or, <a href="plotex3.py">Python 3</a> version)
+<li>Look at the <a href="enchanter.py">Enchanter example</a> or the <a href="blank.py">blank example</a>
+<li><a href="plotex.tar.gz">Download the script with all sample scenarios</a>
+</ul>
+
+<p>
+Designing a large puzzle adventure game (whether text-based or graphical) requires a lot of persnickety detail work. But one also has to keep track of the underlying (or perhaps over-floating) plot; and this <em>also</em> requires a lot of annoying details. Imagine you're three-quarters of the way through building a game, and you decide one particular puzzle should have an alternate solution. Now you can get past the Guardian of Pheebor using either the potion of invisibility <em>or</em> the Rod of Lordly Tights. What does this do to your plot? Can the player save the potion for the Muffin Griffons, thus bypassing a puzzle that isn't supposed to be solvable until chapter 6?
+</p>
+
+<p>
+(I'm using "plot" here to talk about the player's advancement through the game mechanics. This sort of plot may be only faintly tied to the game's <em>story</em>, but that's a digression for a different time.)
+</p>
+
+<p>
+We clever designers have many tricks to deal with this. Typically we name a few critical resources, make sure each one chains neatly to the next, and then hang the rest of the game off of them. Or we might get fancy and make several plot threads available in parallel -- as long as they jump back together at a clearly-specified point.
+</p>
+
+<p>
+Simple structures often come across as simplistic, however. Players can see these tricks too. (Quoting Rob Wheeler: "While playing you can start to feel the diagrams on the whiteboards that led to your experience." That's out of context, but I couldn't let that admirable distillation be lost to history.)
+</p>
+
+<p>
+So what is a designer to do? One can only hold so much in one's head at a time. "Be smarter than all your players" was unlikely advice even before the Internet turned players into an unstoppable puzzle-devouring hydra.
+</p>
+
+<hr>
+
+<p>
+Game designers (the mathier ones, at least) have often talked about "plot graphs" as a way to visualize design. (See, e.g., <a href="http://www.xyzzynews.com/xyzzy.4e.html">C.E. Forman's article</a> in XYZZYNews 4. Spoilers for <em>Enchanter</em>.) A graph (directed acyclic graph, says the pedant) should be exactly the right structure for expressing puzzle requirements and how they interact. Doesn't this solve the problem?
+</p>
+
+<p>
+It does, in part. You can draw a graph for your game, and it will give you a good idea of where your game is broad and where it is narrow; which plot elements must be tapped right away, and which can be deferred until the end of the game. But the graph isn't so good for finding design problems, or looking at variations. The article linked above charts <em>Enchanter</em>, but it doesn't try to represent the fact that the KULCAD spell can unravel many different obstacles -- but you can only cast it once, and if you choose poorly the game becomes unwinnable. (Arguably the trickiest challenge in the game, from the player's point of view.) To add these variations to the chart would clutter it with KULCAD nodes, and you would have to study the result carefully to understand that there's just one way to win.
+</p>
+
+<p>
+What we want, then, is a way to graph a game <em>and</em> reassure ourselves that the structure works the way we want. (And no other.) PlotEx is a simple Python tool to accomplish that.
+</p>
+
+<hr>
+
+<p>
+I'll start with a simple example:
+</p>
+
+<pre>
+# Our actions
+FindSword = Set(sword=True)
+FindLamp = Set(lamp=True)
+EnterCave = Chain(Has(lamp=True), Set(underground=True))
+FeedSelf = Lose('food')
+FeedCyclops = Chain(Has(underground=True), Lose('food'), Set(kitchen=True))
+FeedOrc = Chain(Lose('food'), Set(pants=True))
+KitchenCook = Chain(Has(kitchen=True), Set(food=True))
+
+# Our (sole) starting state
+Start = State(food=True)
+</pre>
+
+<p>
+Hopefully, this is pretty clear even at first glance. (Bar some brow-wrinkling about what needs to be capitalized and why there are sometimes quote marks.)
+</p>
+
+<p>
+Our notional game has seven actions. For example, <code>FindSword</code> represents the player finding a handy sword hanging above a mantel; its action is to set <code>sword</code> to <code>True</code>. Then there's <code>FindLamp</code>. Then we see <code>EnterCave</code>, which chains together two pieces: <em>if</em> the player has the <code>lamp</code>, then the player can reach <code>underground</code>. The <code>FeedSelf</code> action has the player greedily devouring <code>food</code>; it is also possible to feed an orc or (once underground) a cyclops. Finally, <code>KitchenCook</code> is a way to get <code>food</code>, if the player has reached the <code>kitchen</code>.
+</p>
+
+<p>
+The last line is not an action, but the player's starting state. We will helpfully start off with some <code>food</code>, since the <code>kitchen</code> is not immediately available.
+</p>
+
+<p>
+The question, then, is: can the player reach the kitchen while wearing pants? (A daily challenge for many self-employed programmers.) If you graph the story, you wind up with an unenlightening straight chain. You might add some dead-end side branches where you feed the orc too soon, or eat the food yourself, but it's awkward.
+</p>
+
+<p>
+Running PlotEx displays the following:
+</p>
+
+<pre>
+<em>% python plotex.py</em>
+
+&lt;lamp pants sword underground&gt;
+  (4): FeedOrc, FindLamp, EnterCave, FindSword
+
+*&lt;food kitchen lamp pants sword underground&gt;
+  (7): FindLamp, EnterCave, FeedCyclops, FindSword, KitchenCook,
+       FeedOrc, KitchenCook
+
+2 terminal states (1 preferred) reached
+</pre>
+
+<p>
+In other words, this game has two final outcomes -- one where the player feeds the orc first, and one with the full cyclops-kitchen-orc solution. For each case, we can see how many actions were needed, and what they were. The asterisk indicates that the second solution is better than the first.
+</p>
+
+<p>
+Notice that actions aren't once-only. In the second outcome, the player does <code>KitchenCook</code> twice. The food gets used up on the orc, so the player immediately runs back to get more food! As players will.
+</p>
+
+<p>
+Of course this is less enlightening than a plot diagram in some ways. (Generating a graph output would be a nice extension to the script. But I haven't done it yet.) It does, nonetheless, answer the question.
+</p>
+
+<p>
+We can do more, though. How far can you get if you never manage to find the kitchen?
+</p>
+
+<pre>
+<em>% python plotex.py --block KitchenCook</em>
+
+*&lt;lamp pants sword underground&gt;
+  (4): FeedOrc, FindLamp, EnterCave, FindSword
+
+*&lt;kitchen lamp sword underground&gt;
+  (4): FindLamp, EnterCave, FeedCyclops, FindSword
+
+2 terminal states reached
+</pre>
+
+<p>
+We temporarily remove one action from the scenario, and the script tells us: two final outcomes, neither better than the other.
+</p>
+
+<pre>
+<em>% python plotex.py --block FindSword</em>
+
+&lt;lamp pants underground&gt;
+  (3): FeedOrc, FindLamp, EnterCave
+
+*&lt;food kitchen lamp pants underground&gt;
+  (6): FindLamp, EnterCave, FeedCyclops, KitchenCook, FeedOrc, 
+       KitchenCook
+
+2 terminal states (1 preferred) reached
+</pre>
+
+<p>
+Without the sword, the player does fine. (Which was obvious upon inspection of the original code; nothing depends on having the sword. Look, it's an example.)
+</p>
+
+<p>
+The script allows you to display all the intermediate states, if you like, or filter the output for states including a particular quality. You can also see which actions lead into and out of each state. But I won't force more examples on you.
+</p>
+
+<hr>
+
+<p>
+At this point I should back up and explain the underlying assumptions of this model.
+</p>
+
+<p>
+A state is a set of qualities. So far we've only seen boolean qualities. Qualities can also be numbers, strings, or sets. So we could set up a state like this:
+<p>
+
+<pre>
+Start = State(food=True, coins=2, ally='elf', spells=['summon', 'light'])
+</pre>
+
+<p>
+(A quality's type must match across the entire scenario. You can't set <code>food</code> to be <code>True</code> in one place but <code>3</code> in another.)
+</p>
+
+<p>
+An action changes one state into another -- or else it fails, doing nothing. Since states are just sets of qualities, an action simply changes some qualities, perhaps after checking other qualities to see if it can succeed.
+</p>
+
+<p>
+Here's the most important thing: <em>by default, all qualities are assumed to be positive.</em>
+</p>
+
+<p>
+Any adventurer knows that having food is better than not having food. You might need food at some point, but (in general) you'll never need to <em>not</em> have food. And if you did, you could just throw the food away. Similarly, having three coins is better than having two coins (or no coins). Knowing "summon" and "light" is better than just knowing "summon". Being allied to the elves is better than no alliance.
+</p>
+
+<p>
+This underlies my earlier claim that some game outcomes are "better than" others. Having <code>&lt;food kitchen lamp pants sword underground&gt;</code> is strictly better than having just <code>&lt;lamp pants sword underground&gt;</code>, because all those qualities are positive. PlotEx takes that for granted, which lets it optimize its computation (a bit); but it also just makes it easier to set up your scenario.
+</p>
+
+<p>
+Notice that this is a strict, and narrow, sense of "better than". Winning the game is of course <em>good</em>, but it is not necessarily better than every other state. If you get stuck early, you haven't won, but you still have the invisibility potion (because you never reached the point where you had to use it). As far as PlotEx is concerned, this is a valid alternate outcome. You've traded off victory for a potion. If you could walk away with both, <em>that</em> would be the better outcome, but you can't.
+</p>
+
+<p>
+(In contrast, the <code>FeedSelf</code> action in the example is completely useless. The player will never want to eat the food if there's nothing to be gained in exchange. PlotEx ignores such actions entirely.) (A hunger timer is a different kettle of so-to-speak fish. You might set that up by losing the <code>food</code> in exchange for increasing a <code>nourishment</code> quality. You <em>wouldn't</em> decrease a <code>hunger</code> quality, though -- hunger isn't a positive!)
+</p>
+
+<p>
+If you really need a negative quality, use a quality name that begins with an underscore. PlotEx will presume that <code>State(_hunger=2)</code> is worse than <code>State(_hunger=1)</code>, and both are worse than having no hunger at all. But positive qualities usually make more sense.
+</p>
+
+<p>
+What about genuine choices? We saw in the no-cooking example that the player could wind up in <code>&lt;lamp pants sword underground&gt;</code> or <code>&lt;kitchen lamp sword underground&gt;</code>. Each of those has a quality that the other lacks, so neither is better than the other. You can also use a string quality. <code>ally='elf'</code> is neither better nor worse than <code>ally='dwarf'</code>. (Although, again, either is preferable to no alliance.)
+</p>
+
+<hr>
+
+<p>
+With all of this noted down in our spell books, we can revisit <em>Enchanter</em>. The complete script for it is <a href="enchanter.py">here</a>. The output:
+</p>
+
+<pre>
+&lt;adventurer bread exex friendlyturtle gondar guncho incastle
+ incourtyard krebf light melbor rezrov shredscroll vaxum water
+ zifmia _did_action_1 _did_action_2 _did_openegg _did_openoven
+ _selfglow&gt;
+  (18): FillJug, FrotzSelf, GetRezrov, OpenEgg, OpenGate,
+        ExploreCastle, FindGondar, OpenNorthGate, FixScroll, 
+        OpenOven, SearchCell, SleepInBed, SummonAdventurer, 
+        FriendlyAdventurer, SolveTerror, TalkToTurtle, GetKulcad, 
+        SpellOpenBox
+
+&lt;adventurer bread exex friendlyturtle gondar guncho incastle
+ incourtyard krebf light mappencil rezrov shredscroll vaxum water
+ zifmia _did_action_1 _did_action_2 _did_action_3 _did_openegg
+ _did_openoven _selfglow&gt;
+  (18): FillJug, FrotzSelf, GetRezrov, OpenEgg, OpenGate, 
+        ExploreCastle, FindGondar, OpenNorthGate, FixScroll, 
+        OpenOven, SearchCell, SleepInBed, SummonAdventurer, 
+        FriendlyAdventurer, SolveTerror, TalkToTurtle, GetKulcad, 
+        SpellOpenDoor
+
+*&lt;adventurer bread exex friendlyturtle gondar guncho incastle
+ incourtyard knife krebf light melbor ozmoo rezrov shredscroll
+ vaxum water zifmia _did_action_1 _did_action_2 _did_openegg
+ _did_openoven&gt;
+  (20): FillJug, FrotzItem, GetRezrov, OpenEgg, OpenGate, 
+        ExploreCastle, FindGondar, FindPortrait, GetKnife, 
+        OpenNorthGate, FixScroll, OpenOven, SearchCell, SleepInBed,
+        SummonAdventurer, FriendlyAdventurer, SolveTerror, 
+        TalkToTurtle, GetKulcad, SpellOpenBox
+
+*&lt;adventurer bread exex friendlyturtle gondar guncho incastle
+ incourtyard knife krebf light mappencil melbor ozmoo rezrov
+ shredscroll vaxum water zifmia _did_action_1 _did_action_2
+ _did_action_3 _did_openegg _did_openoven&gt;
+  (21): FillJug, FrotzItem, GetRezrov, OpenEgg, OpenGate, 
+        ExploreCastle, FindGondar, FindPortrait, GetKnife, 
+        CutOpenBox, OpenNorthGate, FixScroll, OpenOven, SearchCell, 
+        SleepInBed, SummonAdventurer, FriendlyAdventurer, SolveTerror, 
+        TalkToTurtle, GetKulcad, SpellOpenDoor
+
+*&lt;adventurer bread exex friendlyturtle gondar incastle incourtyard
+ intower knife krebf krill light melbor ozmoo rezrov shredscroll
+ vaxum water win zifmia _did_action_1 _did_action_2 _did_openegg
+ _did_openoven&gt;
+  (23): FillJug, FrotzItem, GetRezrov, OpenEgg, OpenGate, 
+        ExploreCastle, FindGondar, FindPortrait, GetKnife, CutOpenBox,
+        OpenNorthGate, FixScroll, OpenOven, SearchCell, SleepInBed,
+        SummonAdventurer, FriendlyAdventurer, SolveTerror, 
+        TalkToTurtle, GetKulcad, PassStairs, MeetKrill, Win
+
+5 terminal states (3 preferred) reached
+</pre>
+
+<p>
+Winning the game is the last of these outcomes. The others represent interesting mistakes. You can cast FROTZ on yourself, thus making it impossible to visit the darkened gallery and find the OZMOO spell. You can use up the KULCAD spell on the jewelled box; you can use up KULCAD on the guarded door.
+</p>
+
+<p>
+The KULCAD mistakes can each be combined with the FROTZ mistake, or not. Thus, four non-winning outcomes. Casting FROTZ on yourself is strictly worse than casting it on an item, so those outcomes are unstarred. The various KULCAD mistakes leave you with the GUNCHO spell in hand, so they are not (technically) worse than the winning state.
+</p>
+
+<p>
+This all seems sufficiently interesting to justify the effort. If not, you can try blocking various actions, to see where the player winds up getting stuck.
+</p>
+
+<hr>
+
+<p>
+And what have I learned from this?
+</p>
+
+<p>
+First, states explode faster than I expected. The <em>Enchanter</em> example runs to 4468 states. I thought I could cut that down using worse-better comparisons -- short-circuiting states that are strictly worse than states already found. But it turns out that's not so easy. 
+</p>
+
+<p>
+(You could take every new state and compare it to every existing state, to find out whether it trumps (or is trumped by) a known state. But then you can't do anything with that information. The obvious shortcuts are asymmetrical; the resulting graph depends on the order the actions are tried. I don't want that.)
+</p>
+
+<p>
+Running through 4468 states is fast on my brand-new Mac (3.4 seconds). It's probably pretty painful for those of you with older computers.
+</p>
+
+<p>
+This model is great at representing achievements; it's fine for representing scarce resources. (You have to remember to mark actions as once-only.) It's terrible at representing timed puzzles. I didn't try to work <em>Enchanter</em>'s hunger, thirst, and sleep timers into the example. If I had, it would be the same way as Forman's graph: a general handwave of "you have to eat and drink at least once before fighting Krill." I wouldn't even attempt to set up <em>A Change in the Weather</em>, which is all about move counting.
+</p>
+
+<p>
+The model also isn't very good at math, or complex algorithmic constraints (unless they can be broken down into simple dependencies). For <em>Hadean Lands</em> I wanted to set up a bit with transitive closure: if A likes B and B likes C, then A likes C. Doing that for one trio of qualities is easy, but doing it across a whole group required me to write a custom Action.
+</p>
+
+<p>
+As I said, extending the script to generate a chart would be great.
+</p>
+
+<p>
+I thought it would be useful to run the scenario as far as possible without action A, then add action A into the mix and see how much farther it gets. The script lets you do this, but it's hard to display the results in an interesting way. Blocking actions turns out to be more straightforward.
+</p>
+
+<p>
+Python metaclasses are confusing, but with some help from Zack Weinberg and Aahz, I got them straightened out. Thanks!
+</p>
+
+<hr>
+<p>
+Last updated November 6, 2011.
+</p>
+
+<p>
+<em><a href="docs.html">Read the PlotEx script documentation</a></em>
+</p>
+
+<p>
+<em><a href="../home.html">Zarfhome</a></em>
+<em><a href="../sitemap.html#plotex">(map)</a></em>
+<em><a href="../cave/plotex.html">(down)</a></em>
+</p>
+
+</body>
+</html>
