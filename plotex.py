@@ -442,7 +442,11 @@ class State:
     scenario = None
     
     def __init__(self, **dic):
-        self.typelist = infer_typelist(dic)
+        if (global_scenario is None):
+            self.typelist = infer_typelist(dic)
+        else:
+            self.typelist = None
+            self.scenario = global_scenario
         self.hashcache = None
         if (not dic):
             self.dic = {}
@@ -842,7 +846,6 @@ class Action:
         correctly.
         '''
         res = State(**dic)
-        res.scenario = self.scenario
         return res
 
 class Set(Action):
@@ -1090,6 +1093,11 @@ class Choice(Action):
             if newstate:
                 return newstate
         return
+
+# This is only set while a particular scenario is being processed.
+# We can take shortcuts within state generation when global_scenario
+# is set, because no new qualities will be introduced.
+global_scenario = None
     
 def shell(scenario):
     '''This is the top-level function; it processes the command-line options,
@@ -1097,6 +1105,9 @@ def shell(scenario):
 
     Call this, passing your scenario class as the argument.
     '''
+    global global_scenario
+    global_scenario = scenario
+    
     popt = optparse.OptionParser()
 
     popt.add_option('-s', '--start',
@@ -1231,6 +1242,8 @@ def shell(scenario):
     graph.display(opts.showmed, opts.showin, opts.showout, opts.showdiff, opts.showcount, filters, histories)
     if (opts.graph):
         graph.writegv(opts.graph, filters, histories)
+
+    global_scenario = None
 
 class ScenarioClass:
     __metaclass__ = TrackMetaClass
