@@ -407,6 +407,38 @@ class Graph:
                                                      
         fl.write('}\n')
 
+    def writegml(self, filename, filters=[], histories=[]):
+        (outls, trumped) = self.showlist()
+        (colorls, _) = self.showlist(True, filters, histories)
+
+        nodenames = {}
+        pos = 1
+        for state in outls:
+            nodenames[state] = pos
+            pos = pos+1
+
+        fl = open(filename, 'w')
+        fl.write('graph [\n')
+        fl.write('  directed 1\n\n')
+        for state in outls:
+            node = self.states[state]
+            penwidth = 1
+            if (not node.children):
+                penwidth = 3
+            color = 'gray75'
+            if (state in colorls):
+                color = 'forestgreen'
+            fl.write('  comment "%s"\n' % (state,))
+            fl.write('  node [ id %d ]\n' % (nodenames[state],))
+            fl.write('\n')
+            for (acls, child) in node.children:
+                label = ' '.join([ ac.name for ac in acls ])
+                fl.write('  edge [ source %d target %d label "%s" ]\n' % (nodenames[state], nodenames[child], label))
+            fl.write('\n')
+            fl.write('\n')
+                                                     
+        fl.write(']\n')
+
 
 class GraphNode:
     '''GraphNode: Context information for a single state in a Graph.
@@ -1148,9 +1180,12 @@ def shell(scenario):
     popt.add_option('-c', '--count',
                     action='store_true', dest='showcount',
                     help='display only the number of states found')
-    popt.add_option('--graph',
-                    action='store', dest='graph', metavar='FILE',
+    popt.add_option('--graphviz',
+                    action='store', dest='graphviz', metavar='FILE',
                     help='create a graphviz (.gv) file')
+    popt.add_option('--graphml',
+                    action='store', dest='graphml', metavar='FILE',
+                    help='create a GML (.gml) file')
     popt.add_option('-f', '--filter',
                     action='append', dest='filters', metavar='QUALITIES',
                     default=[],
@@ -1234,8 +1269,11 @@ def shell(scenario):
     if (opts.histories):
         histories = parse_actions(scenario, opts.histories)
     graph.display(opts.showmed, opts.showin, opts.showout, opts.showdiff, opts.showcount, filters, histories)
-    if (opts.graph):
-        graph.writegv(opts.graph, filters, histories)
+
+    if (opts.graphviz):
+        graph.writegv(opts.graphviz, filters, histories)
+    if (opts.graphml):
+        graph.writegml(opts.graphml, filters, histories)
 
     global_scenario = None
 
