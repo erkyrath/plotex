@@ -1247,6 +1247,8 @@ def shell(scenario):
 
     (opts, args) = popt.parse_args()
 
+    genlimit = getattr(scenario, 'genlimit', opts.genlimit)
+    
     if (opts.showall):
         opts.showmed = True
         opts.showin = True
@@ -1273,7 +1275,7 @@ def shell(scenario):
             actions = test.actions()
             actions.sort(key=lambda ac:ac.name)
             graph = Graph(scenario, test.startstates())
-            graph.run(actions, limit=opts.genlimit, noopt=opts.noopt)
+            graph.run(actions, limit=genlimit, noopt=opts.noopt)
             if test.verify(graph):
                 print '%s: pass' % (test.name,)
             else:
@@ -1291,7 +1293,7 @@ def shell(scenario):
     actions = [ action for action in scenario._actionmap.values() if action not in blockactions ]
     actions.sort(key=lambda ac:ac.name)
     graph = Graph(scenario, startstates)
-    graph.run(actions, limit=opts.genlimit, noopt=opts.noopt)
+    graph.run(actions, limit=genlimit, noopt=opts.noopt)
     if (withholdactions):
         ls = list(graph.allstates)
         ls.reverse()
@@ -1306,7 +1308,7 @@ def shell(scenario):
         for action in withholdactions:
             actions.append(action)
         graph = Graph(scenario, betterls)
-        graph.run(actions, limit=opts.genlimit, noopt=opts.noopt)
+        graph.run(actions, limit=genlimit, noopt=opts.noopt)
 
     filters = []
     for val in opts.filters:
