@@ -1,5 +1,5 @@
 # PlotEx: a tool for exploring puzzle plot constraints
-#   Version 1.1.0
+#   Version 1.1.1
 #   Andrew Plotkin <erkyrath@eblong.com>
 #   This script is in the public domain.
 #
