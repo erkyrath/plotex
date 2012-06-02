@@ -16,7 +16,9 @@
 # helpful in constructing this script.
 #
 # For a full description, see <http://eblong.com/zarf/plotex/>
-
+#
+# (Update June 2012: Added a requirement: you can't open the egg until
+# you've gained entry to the castle.)
 
 from plotex import *
 
