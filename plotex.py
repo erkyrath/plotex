@@ -493,11 +493,20 @@ class State:
     really?)
 
     (Any operation between two states must be within a common Scenario.)
+
+    You will normally create a State as described in the documentation:
+    State(key1=val1, key2=val2, ...)
+
+    The constructor supports an alternate form: State(dic, newkeys).
+    However, this should only be used internally, by the PlotEx run()
+    algorithm. (It skips some of the type-checking and state-fixing,
+    on the assumption that the caller has done some of that work
+    already.)
     '''
     name = None
     scenario = None
     
-    def __init__(self, __dic=None, **kargs):
+    def __init__(self, __dic=None, __newkeys=None, **kargs):
         if (__dic is None):
             __dic = kargs
         if (global_scenario is None):
@@ -510,7 +519,7 @@ class State:
             self.dic = {}
             return
         self.dic = __dic
-        self.canonize()
+        State.canonize(self.dic, __newkeys)
         
     def __repr__(self):
         keyls = self.dic.keys()
@@ -634,7 +643,7 @@ class State:
                 if (typ is str):
                     if (val == otherval):
                         dic[key] = val
-        res = State(dic)
+        res = State(dic) # canonize all keys, this is not speed-critical
         res.scenario = self.scenario
         return res
 
@@ -645,13 +654,19 @@ class State:
             self.hashcache = hash(tuple(ls))
         return self.hashcache
 
-    def canonize(self):
-        dic = self.dic
-        for (key, val) in dic.items():
+    def canonize(dic, changedkeys=None):
+        '''Modify a dictionary to be a legal state dict (no false values,
+        sets values in frozenset form).
+        '''
+        if (changedkeys is None):
+            changedkeys = dic.keys()
+        for key in changedkeys:
+            val = dic[key]
             if (not val):
                 del dic[key]
             elif (type(val) in (tuple, list)):
                 dic[key] = frozenset(val)
+    canonize = staticmethod(canonize)
 
     def copy(self):
         res = State()
@@ -674,7 +689,7 @@ class State:
             dic[key] = str(val)
         elif (typ is set):
             dic[key] = dic.get(key, set()).union(set[val])
-        res = State(dic)
+        res = State(dic)   # canonize all keys
         res.scenario = self.scenario
         return res
 
@@ -902,6 +917,7 @@ class Set(Action):
     def __init__(self, **dic):
         self.typelist = infer_typelist(dic)
         self.params = dic
+        self.keylist = dic.keys()
         allbool = True
         pos = 0
         for (key, val) in dic.items():
@@ -919,17 +935,16 @@ class Set(Action):
     def __call__(self, state):
         dic = state.dic.copy()
         dic.update(self.params)
-        return State(dic)
+        return State(dic, self.keylist)
 
 class Reset(Action):
     def __init__(self, **dic):
         self.typelist = infer_typelist(dic)
         self.params = dic
+        State.canonize(self.params)
     def __call__(self, state):
-        dic = {}
-        for (key, val) in self.params.items():
-            dic[key] = val
-        return State(dic)
+        dic = self.params.copy()
+        return State(dic, ())
 
 class Has(Action):
     equivtype = EQUIV_SAME
@@ -981,7 +996,7 @@ class Lose(Action):
         dic = olddic.copy()
         for key in self.keys:
             dic.pop(key)
-        return State(dic)
+        return State(dic, ())
 
 class Once(Action):
     equivtype = EQUIV_LOSS
@@ -1016,8 +1031,8 @@ class Once(Action):
         else:
             if (not dic.has_key(self.key)):
                 return
-            dic[self.key] = False
-        newstate = State(dic)
+            del dic[self.key]
+        newstate = State(dic, ())
         if (not self.action):
             return newstate
         else:
@@ -1038,7 +1053,7 @@ class Increment(Action):
         if (self.limit is not None and val >= self.limit):
             return
         dic[self.key] = val+1
-        return State(dic)
+        return State(dic, ())
 
 class Decrement(Action):
     def __init__(self, key, limit=0):
@@ -1054,8 +1069,12 @@ class Decrement(Action):
         val = dic.get(self.key, 0)
         if (self.limit is not None and val <= self.limit):
             return
-        dic[self.key] = val-1
-        return State(dic)
+        val = val-1
+        if (val):
+            dic[self.key] = val
+        else:
+            del dic[self.key]
+        return State(dic, ())
 
 class Include(Action):
     def __init__(self, key, *vals):
@@ -1066,7 +1085,7 @@ class Include(Action):
         dic = dict(state.dic)
         val = dic.get(self.key, frozenset())
         dic[self.key] = val.union(self.values)
-        return State(dic)
+        return State(dic, ())
 
 class Exclude(Action):
     def __init__(self, key, *vals):
@@ -1078,8 +1097,12 @@ class Exclude(Action):
         val = dic.get(self.key, frozenset())
         if (not val.issuperset(self.values)):
             return
-        dic[self.key] = val.difference(self.values)
-        return State(dic)
+        val = val.difference(self.values)
+        if (val):
+            dic[self.key] = val
+        else:
+            del dic[self.key]
+        return State(dic, ())
 
 class Count(Action):
     equivtype = EQUIV_SAME
