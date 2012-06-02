@@ -12,6 +12,10 @@ dt { font-family: monospace; }
 
 <h2>PlotEx: Reference Documentation</h2>
 
+<p>
+<em>(Release 1.1.0. The PlotEx script is in the public domain.)</em>
+</p>
+
 <ul>
 <li><a href="index.html">Learn why PlotEx exists</a>
 <li><a href="plotex.py">Look at the PlotEx script</a> (or, <a href="plotex3.py">Python 3</a> version)
@@ -58,8 +62,12 @@ Note that if an argument accepts multiple values, you can use either multiple ar
 </p>
 
 <dl>
+
 <dt>-s, --start STATE(S)
 <dd>Begin in this state, rather than <code>Start</code>. You may give multiple states; PlotEx will assume they are all available to begin with.
+
+<dt>--startwith QUALITY(IES)
+<dd>Add this (boolean) quality (or qualities) to the start state (each of the start states, if more than once). This is an easy way to start in a custom state, without having to define it in the scenario file.
 
 <dt>--block ACTION(S)
 <dd>Perform the run without permitting the named action (or actions).
@@ -85,8 +93,17 @@ Note that if an argument accepts multiple values, you can use either multiple ar
 <dt>-a, --showall
 <dd>Show intermediate states, plus the in and out actions for every state.
 
+<dt>-d, --diff
+<dd>When listing several states, show only what's different about each one.
+
 <dt>-c, --count
 <dd>Show only the number of states found, rather than displaying each one.
+
+<dt>--graphviz FILE
+<dd>Generate a <a href="http://www.graphviz.org/">GraphViz</a> data file (DOT or *.gv format) containing all the run's states (including intermediate states). If you use the --filter or --history options, those states will be colored.
+
+<dt>--graphml FILE
+<dd>Generate a <a href="http://www.fim.uni-passau.de/fileadmin/files/lehrstuhl/brandenburg/projekte/gml/gml-technical-report.pdf">GML</a> data file containing all the run's states.
 
 <dt>-t, --test TEST(S)
 <dd>Perform each of the named tests. Show how many fail. (See Tests, below.) When running tests, most of the other arguments have no effect; only --genlimit is meaningful. (Start states, blocks, etc are defined by the individual tests.)
@@ -96,6 +113,10 @@ Note that if an argument accepts multiple values, you can use either multiple ar
 
 <dt>--genlimit NUMBER
 <dd>Normally, if the run generates more than 10000 states, PlotEx assumes you have an infinite loop and gives up. This argument allows you to raise (or lower) that limit.
+
+<dt>--noopt
+<dd>Switch off certain optimizations in the PlotEx algorithm. These optimizations are normally safe, but may go wrong if certain bizarre actions are defined.
+
 </dl>
 
 <h3>Setting up a PlotEx scenario</h3>
@@ -361,6 +382,10 @@ Some examples from Enchanter:
 <code>Chain(Has(intower=True), Has(gondar=True), HasAny(vaxum=True, cleesh=True), Set(krill=True))</code> -- Check that the player is in the tower, that the player has GONDAR, and that the player has <em>either</em> CLEESH or VAXUM. If all of those are true, set <code>krill</code>, indicating that the player has access to Krill.
 </p>
 
+<p>
+By the way, you shouldn't write a self-defeating action -- one which loses and gains a quality in the same line. (Malexample: <code>Chain(Lose('kulcad'), Set(kulcad=True))</code>.) This doesn't just waste time, it confuses PlotEx's optimizer; you'll get wrong answers.
+</p>
+
 <p><strong>
 Choice(ACTION, ACTION, ACTION...)
 </strong></p>
@@ -483,7 +508,7 @@ Note that you can include multiple positive or negative criteria in the test. Fo
 
 <hr>
 <p>
-Last updated November 6, 2011.
+Last updated June 1, 2012.
 </p>
 
 <p>
