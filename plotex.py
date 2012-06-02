@@ -441,17 +441,19 @@ class State:
     name = None
     scenario = None
     
-    def __init__(self, **dic):
+    def __init__(self, __dic=None, **kargs):
+        if (__dic is None):
+            __dic = kargs
         if (global_scenario is None):
-            self.typelist = infer_typelist(dic)
+            self.typelist = infer_typelist(__dic)
         else:
             self.typelist = None
             self.scenario = global_scenario
         self.hashcache = None
-        if (not dic):
+        if (not __dic):
             self.dic = {}
             return
-        self.dic = dic
+        self.dic = __dic
         self.canonize()
         
     def __repr__(self):
@@ -576,7 +578,7 @@ class State:
                 if (typ is str):
                     if (val == otherval):
                         dic[key] = val
-        res = State(**dic)
+        res = State(dic)
         res.scenario = self.scenario
         return res
 
@@ -616,7 +618,7 @@ class State:
             dic[key] = str(val)
         elif (typ is set):
             dic[key] = dic.get(key, set()).union(set[val])
-        res = State(**dic)
+        res = State(dic)
         res.scenario = self.scenario
         return res
 
@@ -861,7 +863,7 @@ class Set(Action):
     def __call__(self, state):
         dic = state.dic.copy()
         dic.update(self.params)
-        return State(**dic)
+        return State(dic)
 
 class Reset(Action):
     def __init__(self, **dic):
@@ -871,7 +873,7 @@ class Reset(Action):
         dic = {}
         for (key, val) in self.params.items():
             dic[key] = val
-        return State(**dic)
+        return State(dic)
 
 class Has(Action):
     equivtype = EQUIV_SAME
@@ -923,7 +925,7 @@ class Lose(Action):
         dic = olddic.copy()
         for key in self.keys:
             dic.pop(key)
-        return State(**dic)
+        return State(dic)
 
 class Once(Action):
     equivtype = EQUIV_LOSS
@@ -959,7 +961,7 @@ class Once(Action):
             if (not dic.has_key(self.key)):
                 return
             dic[self.key] = False
-        newstate = State(**dic)
+        newstate = State(dic)
         if (not self.action):
             return newstate
         else:
@@ -980,7 +982,7 @@ class Increment(Action):
         if (self.limit is not None and val >= self.limit):
             return
         dic[self.key] = val+1
-        return State(**dic)
+        return State(dic)
 
 class Decrement(Action):
     def __init__(self, key, limit=0):
@@ -997,7 +999,7 @@ class Decrement(Action):
         if (self.limit is not None and val <= self.limit):
             return
         dic[self.key] = val-1
-        return State(**dic)
+        return State(dic)
 
 class Include(Action):
     def __init__(self, key, *vals):
@@ -1008,7 +1010,7 @@ class Include(Action):
         dic = dict(state.dic)
         val = dic.get(self.key, frozenset())
         dic[self.key] = val.union(self.values)
-        return State(**dic)
+        return State(dic)
 
 class Exclude(Action):
     def __init__(self, key, *vals):
@@ -1021,7 +1023,7 @@ class Exclude(Action):
         if (not val.issuperset(self.values)):
             return
         dic[self.key] = val.difference(self.values)
-        return State(**dic)
+        return State(dic)
 
 class Count(Action):
     equivtype = EQUIV_SAME
