@@ -6,6 +6,7 @@
 pre { margin-left: 3em; }
 dl { margin-left: 3em; }
 dt { font-family: monospace; }
+.Spell { font-variant: small-caps; }
 </style>
 </head>
 <body>
@@ -371,15 +372,15 @@ Some examples from Enchanter:
 </p>
 
 <p>
-<code>Chain(Has(rezrov=True), Set(incourtyard=True))</code> -- If the player has the <code>rezrov</code> spell, set <code>incourtyard</code>, indicating that the player has access to the courtyard.
+<code>Chain(Has(rezrov=True), Set(incourtyard=True))</code> -- If the player has the <span class="Spell">rezrov</span> spell, set <code>incourtyard</code>, indicating that the player has access to the courtyard.
 </p>
 
 <p>
-<code>Chain(Lose('kulcad'), Set(melbor=True))</code> -- If the player has the <code>kulcad</code> spell, remove it, and then gain the <code>melbor</code> spell. (You can KULCAD the jewelled box to open it and access the contents. But KULCAD is a one-shot spell.) If the player doesn't have the <code>kulcad</code> quality, this action does nothing.
+<code>Chain(Lose('kulcad'), Set(melbor=True))</code> -- If the player has the <span class="Spell">kulcad</span> spell, remove it, and then gain the <span class="Spell">melbor</span> spell. (You can <span class="Spell">kulcad</span> the jewelled box to open it and access the contents. But <span class="Spell">kulcad</span> is a one-shot spell.) If the player doesn't have the <code>kulcad</code> quality, this action does nothing.
 </p>
 
 <p>
-<code>Chain(Has(intower=True), Has(gondar=True), HasAny(vaxum=True, cleesh=True), Set(krill=True))</code> -- Check that the player is in the tower, that the player has GONDAR, and that the player has <em>either</em> CLEESH or VAXUM. If all of those are true, set <code>krill</code>, indicating that the player has access to Krill.
+<code>Chain(Has(intower=True), Has(gondar=True), HasAny(vaxum=True, cleesh=True), Set(krill=True))</code> -- Check that the player is in the tower, that the player has <span class="Spell">gondar</span>, and that the player has <em>either</em> <span class="Spell">cleesh</span> or <span class="Spell">vaxum</span>. If all of those are true, set <code>krill</code>, indicating that the player has access to Krill.
 </p>
 
 <p>
