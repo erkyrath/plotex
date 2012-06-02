@@ -5,6 +5,7 @@
 <style type="text/css">
 pre { margin-left: 3em; }
 p.Center { text-align: center; }
+.Spell { font-variant: small-caps; }
 </style>
 </head>
 <body>
@@ -49,7 +50,7 @@ Game designers (the mathier ones, at least) have often talked about "plot graphs
 </p>
 
 <p>
-It does, in part. You can draw a graph for your game, and it will give you a good idea of where your game is broad and where it is narrow; which plot elements must be tapped right away, and which can be deferred until the end of the game. But the graph isn't so good for finding design problems, or looking at variations. The article linked above charts <em>Enchanter</em>. However, it doesn't try to represent the fact that the KULCAD spell can unravel many different obstacles -- but you can only cast it once. If you choose poorly, the game becomes unwinnable. (Arguably the trickiest challenge in the game, from the player's point of view.) To add these variations to the chart would clutter it with KULCAD nodes, and you would have to study the result carefully to understand that there's just one way to win.
+It does, in part. You can draw a graph for your game, and it will give you a good idea of where your game is broad and where it is narrow; which plot elements must be tapped right away, and which can be deferred until the end of the game. But the graph isn't so good for finding design problems, or looking at variations. The article linked above charts <em>Enchanter</em>. However, it doesn't try to represent the fact that the <span class="Spell">kulcad</span> spell can unravel many different obstacles -- but you can only cast it once. If you choose poorly, the game becomes unwinnable. (Arguably the trickiest challenge in the game, from the player's point of view.) To add these variations to the chart would clutter it with <span class="Spell">kulcad</span> nodes, and you would have to study the result carefully to understand that there's just one way to win.
 </p>
 
 <p>
@@ -284,11 +285,11 @@ With all of this noted down in our spell books, we can revisit <em>Enchanter</em
 </pre>
 
 <p>
-Winning the game is the last of these outcomes. The others represent mistakes. You can use up the KULCAD spell on the jewelled box; you can use up KULCAD on the guarded door.
+Winning the game is the last of these outcomes. The others represent mistakes. You can use up the <span class="Spell">kulcad</span> spell on the jewelled box; you can use up <span class="Spell">kulcad</span> on the guarded door.
 </p>
 
 <p>
-(The previous release of PlotEx also listed the FROTZ mistake -- you cast FROTZ on yourself, thus making it impossible to visit the darkened gallery and find the OZMOO spell. However, that was an inadequate description of the game! You <em>can</em> cast FROTZ on yourself, as long as you do it <em>after</em> picking up OZMOO. The output above now demonstrates this.)
+(The previous release of PlotEx also listed the <span class="Spell">frotz</span> mistake -- you cast <span class="Spell">frotz</span> on yourself, thus making it impossible to visit the darkened gallery and find the <span class="Spell">ozmoo</span> spell. However, that was an inadequate description of the game! You <em>can</em> cast <span class="Spell">frotz</span> on yourself, as long as you do it <em>after</em> picking up <span class="Spell">ozmoo</span>. The output above now demonstrates this.)
 </p>
 
 <p>
@@ -332,7 +333,7 @@ These are the same three states, but now they're described in terms of their dif
 </p>
 
 <p>
-Now we can understand what's going on. In the first two states, you wind up keeping GUNCHO (because you never have a chance to use it). In the second state, you have <code>_did_action_4</code> (note that it's marked as <em>lacking</em> in the other two outcomes); this is the flag associated with picking up the pencil (after using KULCAD on the guarded door). And in the third state, you win.
+Now we can understand what's going on. In the first two states, you wind up keeping <span class="Spell">guncho</span> (because you never have a chance to use it). In the second state, you have <code>_did_action_4</code> (note that it's marked as <em>lacking</em> in the other two outcomes); this is the flag associated with picking up the pencil (after using <span class="Spell">kulcad</span> on the guarded door). And in the third state, you win.
 </p>
 
 <p>
