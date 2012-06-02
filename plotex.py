@@ -422,6 +422,11 @@ class Graph:
     def writegml(self, filename, filters=[], histories=[]):
         (outls, trumped) = self.showlist()
         (colorls, _) = self.showlist(True, filters, histories)
+        if (len(colorls) >= len(outls)):
+            colorls = ()
+
+        extrastart = [ state for state in self.startstates if not self.states[state].is_maximal ]
+        outls = extrastart + outls
 
         nodenames = {}
         pos = 1
@@ -435,17 +440,24 @@ class Graph:
         for state in outls:
             node = self.states[state]
             penwidth = 1
-            if (not node.children):
+            if (node.is_maximal and not node.children):
                 penwidth = 3
             color = 'gray75'
             if (state in colorls):
                 color = 'forestgreen'
+            if (not node.is_maximal):
+                color = 'white'
             fl.write('  comment "%s"\n' % (state,))
             fl.write('  node [ id %d ]\n' % (nodenames[state],))
             fl.write('\n')
-            for (acls, child) in node.children:
+            if (node.is_maximal):
+                for (acls, child) in node.children:
+                    label = ' '.join([ ac.name for ac in acls ])
+                    fl.write('  edge [ source %d target %d label "%s" ]\n' % (nodenames[state], nodenames[child], label))
+            else:
+                acls = node.maxing_actions
                 label = ' '.join([ ac.name for ac in acls ])
-                fl.write('  edge [ source %d target %d label "%s" ]\n' % (nodenames[state], nodenames[child], label))
+                fl.write('  edge [ source %d target %d label "%s" ]\n' % (nodenames[state], nodenames[node.maximal], label))
             fl.write('\n')
             fl.write('\n')
                                                      
