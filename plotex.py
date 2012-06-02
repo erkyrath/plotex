@@ -584,7 +584,7 @@ class State:
 
     def __hash__(self):
         if (self.hashcache is None):
-            ls = [ pair for pair in self.dic.items() ]
+            ls = self.dic.items()
             ls.sort()
             self.hashcache = hash(tuple(ls))
         return self.hashcache
