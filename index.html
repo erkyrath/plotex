@@ -4,11 +4,16 @@
 <title>PlotEx: a tool for exploring puzzle plot constraints</title>
 <style type="text/css">
 pre { margin-left: 3em; }
+p.Center { text-align: center; }
 </style>
 </head>
 <body>
 
 <h2>PlotEx: a tool for exploring puzzle plot constraints</h2>
+
+<p>
+<em>(Release 1.1.0. The PlotEx script is in the public domain.)</em>
+</p>
 
 <ul>
 <li><a href="docs.html">Read the PlotEx script documentation</a>
@@ -44,7 +49,7 @@ Game designers (the mathier ones, at least) have often talked about "plot graphs
 </p>
 
 <p>
-It does, in part. You can draw a graph for your game, and it will give you a good idea of where your game is broad and where it is narrow; which plot elements must be tapped right away, and which can be deferred until the end of the game. But the graph isn't so good for finding design problems, or looking at variations. The article linked above charts <em>Enchanter</em>, but it doesn't try to represent the fact that the KULCAD spell can unravel many different obstacles -- but you can only cast it once, and if you choose poorly the game becomes unwinnable. (Arguably the trickiest challenge in the game, from the player's point of view.) To add these variations to the chart would clutter it with KULCAD nodes, and you would have to study the result carefully to understand that there's just one way to win.
+It does, in part. You can draw a graph for your game, and it will give you a good idea of where your game is broad and where it is narrow; which plot elements must be tapped right away, and which can be deferred until the end of the game. But the graph isn't so good for finding design problems, or looking at variations. The article linked above charts <em>Enchanter</em>. However, it doesn't try to represent the fact that the KULCAD spell can unravel many different obstacles -- but you can only cast it once. If you choose poorly, the game becomes unwinnable. (Arguably the trickiest challenge in the game, from the player's point of view.) To add these variations to the chart would clutter it with KULCAD nodes, and you would have to study the result carefully to understand that there's just one way to win.
 </p>
 
 <p>
@@ -95,25 +100,36 @@ Running PlotEx displays the following:
 <em>% python plotex.py</em>
 
 &lt;lamp pants sword underground&gt;
-  (4): FeedOrc, FindLamp, EnterCave, FindSword
+  (4): FindLamp, EnterCave, FindSword, FeedOrc
+
+&lt;lamp sword underground&gt;
+  (4): FindLamp, EnterCave, FindSword, FeedSelf
 
 *&lt;food kitchen lamp pants sword underground&gt;
-  (7): FindLamp, EnterCave, FeedCyclops, FindSword, KitchenCook,
+  (7): FindLamp, EnterCave, FindSword, FeedCyclops, KitchenCook,
        FeedOrc, KitchenCook
 
-2 terminal states (1 preferred) reached
+3 terminal states (1 preferred) reached
 </pre>
 
 <p>
-In other words, this game has two final outcomes -- one where the player feeds the orc first, and one with the full cyclops-kitchen-orc solution. For each case, we can see how many actions were needed, and what they were. The asterisk indicates that the second solution is better than the first.
+In other words, this game has three final outcomes -- one where the player eats the food, one where the player feeds the orc first, and one with the full cyclops-kitchen-orc solution. For each case, we can see how many actions were needed, and what they were. The asterisk indicates that the third solution is better than the others.
 </p>
 
 <p>
-Notice that actions aren't once-only. In the second outcome, the player does <code>KitchenCook</code> twice. The food gets used up on the orc, so the player immediately runs back to get more food! As players will.
+Notice that actions aren't once-only. In the third outcome, the player does <code>KitchenCook</code> twice. The food gets used up on the orc, so the player immediately runs back to get more food! As players will.
 </p>
 
 <p>
-Of course this is less enlightening than a plot diagram in some ways. (Generating a graph output would be a nice extension to the script. But I haven't done it yet.) It does, nonetheless, answer the question.
+Of course this is less enlightening than a plot diagram in some ways. It does, nonetheless, answer the question.
+</p>
+
+<p>
+If you <em>do</em> want a graph, PlotEx will provide one, with the help of the <a href="http://www.graphviz.org/">GraphViz</a> application. The states are somewhat collapsed, for simplicity, but the arrows show their actions. You can see that the important three final states are highlighted. (The dotted line, we'll get to shortly.)
+</p>
+
+<p class="Center">
+<img alt="Test scenario graph: five nodes" src="testscen.png">
 </p>
 
 <p>
@@ -123,30 +139,36 @@ We can do more, though. How far can you get if you never manage to find the kitc
 <pre>
 <em>% python plotex.py --block KitchenCook</em>
 
-*&lt;lamp pants sword underground&gt;
-  (4): FeedOrc, FindLamp, EnterCave, FindSword
-
 *&lt;kitchen lamp sword underground&gt;
-  (4): FindLamp, EnterCave, FeedCyclops, FindSword
+  (4): FindLamp, EnterCave, FindSword, FeedCyclops
 
-2 terminal states reached
+*&lt;lamp pants sword underground&gt;
+  (4): FindLamp, EnterCave, FindSword, FeedOrc
+
+&lt;lamp sword underground&gt;
+  (4): FindLamp, EnterCave, FindSword, FeedSelf
+
+3 terminal states (2 preferred) reached
 </pre>
 
 <p>
-We temporarily remove one action from the scenario, and the script tells us: two final outcomes, neither better than the other.
+We temporarily remove the <code>KitchenCook</code> action from the scenario, and the script tells us: three final outcomes, none reaching the <code>kitchen</code>.
 </p>
 
 <pre>
 <em>% python plotex.py --block FindSword</em>
 
 &lt;lamp pants underground&gt;
-  (3): FeedOrc, FindLamp, EnterCave
+  (3): FindLamp, EnterCave, FeedOrc
+
+&lt;lamp underground&gt;
+  (3): FindLamp, EnterCave, FeedSelf
 
 *&lt;food kitchen lamp pants underground&gt;
-  (6): FindLamp, EnterCave, FeedCyclops, KitchenCook, FeedOrc, 
+  (6): FindLamp, EnterCave, FeedCyclops, KitchenCook, FeedOrc,
        KitchenCook
 
-2 terminal states (1 preferred) reached
+3 terminal states (1 preferred) reached
 </pre>
 
 <p>
@@ -188,15 +210,27 @@ Any adventurer knows that having food is better than not having food. You might 
 </p>
 
 <p>
-This underlies my earlier claim that some game outcomes are "better than" others. Having <code>&lt;food kitchen lamp pants sword underground&gt;</code> is strictly better than having just <code>&lt;lamp pants sword underground&gt;</code>, because all those qualities are positive. PlotEx takes that for granted, which lets it optimize its computation (a bit); but it also just makes it easier to set up your scenario.
+This underlies my earlier claim that some game outcomes are "better than" others. Having <code>&lt;food kitchen lamp pants sword underground&gt;</code> is strictly better than having just <code>&lt;lamp pants sword underground&gt;</code>, because all those qualities are positive. PlotEx takes that for granted, which lets it optimize its computation; but it also just makes it easier to set up your scenario.
 </p>
 
 <p>
-Notice that this is a strict, and narrow, sense of "better than". Winning the game is of course <em>good</em>, but it is not necessarily better than every other state. If you get stuck early, you haven't won, but you still have the invisibility potion (because you never reached the point where you had to use it). As far as PlotEx is concerned, this is a valid alternate outcome. You've traded off victory for a potion. If you could walk away with both, <em>that</em> would be the better outcome, but you can't.
+Here's the second important thing: <em>any action that strictly improves a position is "free".</em> In the example, picking up the sword and lamp are free actions -- they don't cost anything. The same goes for entering the cave and cooking food; these have <em>prerequisites</em>, but not <em>costs</em>.
 </p>
 
 <p>
-(In contrast, the <code>FeedSelf</code> action in the example is completely useless. The player will never want to eat the food if there's nothing to be gained in exchange. PlotEx ignores such actions entirely.) (A hunger timer is a different kettle of so-to-speak fish. You might set that up by losing the <code>food</code> in exchange for increasing a <code>nourishment</code> quality. You <em>wouldn't</em> decrease a <code>hunger</code> quality, though -- hunger isn't a positive!)
+PlotEx collapses free actions together, both in its text and graph output. There's never a reason not to do them, right? So we might as well do them as a group. That's why some of the arrows in the graph have multiple actions labeled.
+</p>
+
+<p>
+(This also explains the dotted arrow. From PlotEx's point of view, the "start state" already includes <code>lamp</code>, <code>sword</code>, and <code>underground</code>. Those first three actions are free, and don't need to be represented separately. But it would be confusing to leave off the start state, so we include it with a dotted line.)
+</p>
+
+<p>
+Notice that this is a strict, and narrow, sense of "improvement". Winning the game is of course <em>good</em>, but it is not necessarily better than every other state. If you get stuck early, you haven't won, but you still have the invisibility potion (because you never reached the point where you had to use it). As far as PlotEx is concerned, this is a valid alternate outcome. You've traded off victory for a potion. If you could walk away with both, <em>that</em> would be the better outcome, but you can't.
+</p>
+
+<p>
+(In contrast, the <code>FeedSelf</code> action in the example is completely useless. The player will never want to eat the food if there's nothing to be gained in exchange.) (A hunger timer is a different kettle of so-to-speak fish. You might set that up by losing the <code>food</code> in exchange for increasing a <code>nourishment</code> quality. You <em>wouldn't</em> decrease a <code>hunger</code> quality, though -- hunger isn't a positive!)
 </p>
 
 <p>
@@ -214,65 +248,95 @@ With all of this noted down in our spell books, we can revisit <em>Enchanter</em
 </p>
 
 <pre>
-&lt;adventurer bread exex friendlyturtle gondar guncho incastle
- incourtyard krebf light melbor rezrov shredscroll vaxum water
- zifmia _did_action_1 _did_action_2 _did_openegg _did_openoven
- _selfglow&gt;
-  (18): FillJug, FrotzSelf, GetRezrov, OpenEgg, OpenGate,
-        ExploreCastle, FindGondar, OpenNorthGate, FixScroll, 
-        OpenOven, SearchCell, SleepInBed, SummonAdventurer, 
-        FriendlyAdventurer, SolveTerror, TalkToTurtle, GetKulcad, 
-        SpellOpenBox
-
-&lt;adventurer bread exex friendlyturtle gondar guncho incastle
- incourtyard krebf light mappencil rezrov shredscroll vaxum water
- zifmia _did_action_1 _did_action_2 _did_action_3 _did_openegg
- _did_openoven _selfglow&gt;
-  (18): FillJug, FrotzSelf, GetRezrov, OpenEgg, OpenGate, 
-        ExploreCastle, FindGondar, OpenNorthGate, FixScroll, 
-        OpenOven, SearchCell, SleepInBed, SummonAdventurer, 
-        FriendlyAdventurer, SolveTerror, TalkToTurtle, GetKulcad, 
-        SpellOpenDoor
+<em>% python enchanter.py</em>
 
 *&lt;adventurer bread exex friendlyturtle gondar guncho incastle
  incourtyard knife krebf light melbor ozmoo rezrov shredscroll
- vaxum water zifmia _did_action_1 _did_action_2 _did_openegg
- _did_openoven&gt;
-  (20): FillJug, FrotzItem, GetRezrov, OpenEgg, OpenGate, 
-        ExploreCastle, FindGondar, FindPortrait, GetKnife, 
-        OpenNorthGate, FixScroll, OpenOven, SearchCell, SleepInBed,
-        SummonAdventurer, FriendlyAdventurer, SolveTerror, 
-        TalkToTurtle, GetKulcad, SpellOpenBox
+  vaxum water zifmia _did_action_1 _did_action_2 _did_action_3
+   _did_openoven _selfglow&gt;
+  (22): FillJug, FrotzItem, GetRezrov, OpenGate, ExploreCastle,
+        FindGondar, FindPortrait, GetKnife, CutOpenBox, OpenNorthGate,
+        SearchCell, SleepInBed, TalkToTurtle, FrotzSelf, GetKulcad,
+        OpenEgg, FixScroll, SummonAdventurer, FriendlyAdventurer,
+        OpenOven, SolveTerror, SpellOpenBox
 
-*&lt;adventurer bread exex friendlyturtle gondar guncho incastle
- incourtyard knife krebf light mappencil melbor ozmoo rezrov
- shredscroll vaxum water zifmia _did_action_1 _did_action_2
- _did_action_3 _did_openegg _did_openoven&gt;
-  (21): FillJug, FrotzItem, GetRezrov, OpenEgg, OpenGate, 
-        ExploreCastle, FindGondar, FindPortrait, GetKnife, 
-        CutOpenBox, OpenNorthGate, FixScroll, OpenOven, SearchCell, 
-        SleepInBed, SummonAdventurer, FriendlyAdventurer, SolveTerror, 
-        TalkToTurtle, GetKulcad, SpellOpenDoor
+&lt;adventurer bread exex friendlyturtle gondar guncho incastle
+ incourtyard knife krebf light melbor ozmoo rezrov shredscroll
+  vaxum water zifmia _did_action_1 _did_action_2 _did_action_3
+   _did_action_4 _did_openoven _selfglow&gt;
+  (22): FillJug, FrotzItem, GetRezrov, OpenGate, ExploreCastle,
+        FindGondar, FindPortrait, GetKnife, CutOpenBox, OpenNorthGate,
+        SearchCell, SleepInBed, TalkToTurtle, FrotzSelf, GetKulcad,
+        OpenEgg, FixScroll, SummonAdventurer, FriendlyAdventurer,
+        OpenOven, SpellOpenDoor, SolveTerror
 
 *&lt;adventurer bread exex friendlyturtle gondar incastle incourtyard
  intower knife krebf krill light melbor ozmoo rezrov shredscroll
- vaxum water win zifmia _did_action_1 _did_action_2 _did_openegg
- _did_openoven&gt;
-  (23): FillJug, FrotzItem, GetRezrov, OpenEgg, OpenGate, 
-        ExploreCastle, FindGondar, FindPortrait, GetKnife, CutOpenBox,
-        OpenNorthGate, FixScroll, OpenOven, SearchCell, SleepInBed,
-        SummonAdventurer, FriendlyAdventurer, SolveTerror, 
-        TalkToTurtle, GetKulcad, PassStairs, MeetKrill, Win
+  vaxum water win zifmia _did_action_1 _did_action_2 _did_action_3
+   _did_openoven _selfglow&gt;
+  (24): FillJug, FrotzItem, GetRezrov, OpenGate, ExploreCastle,
+        FindGondar, FindPortrait, GetKnife, CutOpenBox, OpenNorthGate,
+        SearchCell, SleepInBed, TalkToTurtle, FrotzSelf, GetKulcad,
+        OpenEgg, FixScroll, SummonAdventurer, FriendlyAdventurer,
+        OpenOven, PassStairs, MeetKrill, SolveTerror, Win
 
-5 terminal states (3 preferred) reached
+3 terminal states (2 preferred) reached
 </pre>
 
 <p>
-Winning the game is the last of these outcomes. The others represent interesting mistakes. You can cast FROTZ on yourself, thus making it impossible to visit the darkened gallery and find the OZMOO spell. You can use up the KULCAD spell on the jewelled box; you can use up KULCAD on the guarded door.
+Winning the game is the last of these outcomes. The others represent mistakes. You can use up the KULCAD spell on the jewelled box; you can use up KULCAD on the guarded door.
 </p>
 
 <p>
-The KULCAD mistakes can each be combined with the FROTZ mistake, or not. Thus, four non-winning outcomes. Casting FROTZ on yourself is strictly worse than casting it on an item, so those outcomes are unstarred. The various KULCAD mistakes leave you with the GUNCHO spell in hand, so they are not (technically) worse than the winning state.
+(The previous release of PlotEx also listed the FROTZ mistake -- you cast FROTZ on yourself, thus making it impossible to visit the darkened gallery and find the OZMOO spell. However, that was an inadequate description of the game! You <em>can</em> cast FROTZ on yourself, as long as you do it <em>after</em> picking up OZMOO. The output above now demonstrates this.)
+</p>
+
+<p>
+One more feature. The state descriptions above are dense collections of labels; it's hard to see the differences. We can have PlotEx work out the differences for us:
+</p>
+
+<pre>
+<em>% python enchanter.py -d</em>
+
+(common state: &lt;adventurer bread exex friendlyturtle gondar incastle
+ incourtyard knife krebf light melbor ozmoo rezrov shredscroll vaxum
+ water zifmia _did_action_1 _did_action_2 _did_action_3 _did_action_4
+ _did_openoven _selfglow&gt;)
+
+*&lt;+guncho -_did_action_4&gt;
+  (22): FillJug, FrotzItem, GetRezrov, OpenGate, ExploreCastle,
+        FindGondar, FindPortrait, GetKnife, CutOpenBox, OpenNorthGate,
+        SearchCell, SleepInBed, TalkToTurtle, FrotzSelf, GetKulcad,
+        OpenEgg, FixScroll, SummonAdventurer, FriendlyAdventurer,
+        OpenOven, SolveTerror, SpellOpenBox
+
+&lt;+guncho&gt;
+  (22): FillJug, FrotzItem, GetRezrov, OpenGate, ExploreCastle,
+        FindGondar, FindPortrait, GetKnife, CutOpenBox, OpenNorthGate,
+        SearchCell, SleepInBed, TalkToTurtle, FrotzSelf, GetKulcad,
+        OpenEgg, FixScroll, SummonAdventurer, FriendlyAdventurer,
+        OpenOven, SpellOpenDoor, SolveTerror
+
+*&lt;+intower +krill +win -_did_action_4&gt;
+  (24): FillJug, FrotzItem, GetRezrov, OpenGate, ExploreCastle,
+        FindGondar, FindPortrait, GetKnife, CutOpenBox, OpenNorthGate,
+        SearchCell, SleepInBed, TalkToTurtle, FrotzSelf, GetKulcad,
+        OpenEgg, FixScroll, SummonAdventurer, FriendlyAdventurer,
+        OpenOven, PassStairs, MeetKrill, SolveTerror, Win
+
+3 terminal states (2 preferred) reached
+</pre>
+
+<p>
+These are the same three states, but now they're described in terms of their differences from the "common state" shown at the top. (The common state isn't necessarily reachable; it's just the greatest common denominator of the three listed states.)
+</p>
+
+<p>
+Now we can understand what's going on. In the first two states, you wind up keeping GUNCHO (because you never have a chance to use it). In the second state, you have <code>_did_action_4</code> (note that it's marked as <em>lacking</em> in the other two outcomes); this is the flag associated with picking up the pencil (after using KULCAD on the guarded door). And in the third state, you win.
+</p>
+
+<p>
+Here's the <a href="enchanter.png">graph of Enchanter</a>. Warning: very large, confusing, and not actually useful to look at.
 </p>
 
 <p>
@@ -318,8 +382,34 @@ Python metaclasses are confusing, but with some help from Zack Weinberg and Aahz
 </p>
 
 <hr>
+
 <p>
-Last updated November 6, 2011.
+Update for release 1.1.0: (pretend this is a blog post, I dunno.)
+</p>
+
+<p>
+As you see, I got some chart capability in there. Although for any real-sized game, the charts are too large to make sense of.
+</p>
+
+<p>
+I finally figured out the right way to think about improvement actions. That's the business about "improvements are free"; the original release of PlotEx didn't have that notion. To be formal: we find the closure of a state under actions that strictly improve it. Since an action available in state X is available in all states strictly better than X, we can divide all states into equivalence classes based on their maximal (most-improved) state. We can then search through equivalence classes instead of states, which is a simpler problem. 
+</p>
+
+<p>
+Man, I haven't had a chance to break out the equivalence classes in years.
+</p>
+
+<p>
+This cuts down Enchanter from 4468 states to 96, and it runs almost forty times as fast. (I put in a few other optimizations as well.)
+</p>
+
+<p>
+Mind you, it's still pretty easy to overload the system. My old <em>Hadean Lands</em> overview scenario has 506 states. My current HL scenario, including every puzzle element, is 2160 states just in the first chapter! (I have more than the first chapter represented, but it's pretty clear that I'll have to run this thing in segments if I want it to finish in my lifetime.)
+</p>
+
+<hr>
+<p>
+Last updated June 1, 2012.
 </p>
 
 <p>
