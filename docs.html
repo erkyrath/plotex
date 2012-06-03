@@ -383,10 +383,6 @@ Some examples from Enchanter:
 <code>Chain(Has(intower=True), Has(gondar=True), HasAny(vaxum=True, cleesh=True), Set(krill=True))</code> -- Check that the player is in the tower, that the player has <span class="Spell">gondar</span>, and that the player has <em>either</em> <span class="Spell">cleesh</span> or <span class="Spell">vaxum</span>. If all of those are true, set <code>krill</code>, indicating that the player has access to Krill.
 </p>
 
-<p>
-By the way, you shouldn't write a self-defeating action -- one which loses and gains a quality in the same line. (Malexample: <code>Chain(Lose('kulcad'), Set(kulcad=True))</code>.) This doesn't just waste time, it confuses PlotEx's optimizer; you'll get wrong answers.
-</p>
-
 <p><strong>
 Choice(ACTION, ACTION, ACTION...)
 </strong></p>
@@ -507,9 +503,126 @@ Note that you can include multiple positive or negative criteria in the test. Fo
 <code>Test(can=Has(win=True), excludes=AteMushroom)</code> -- Look at the list of states which have <code>win</code>; make sure <em>none</em> of them passed through the <code>AteMushroom</code> action.
 </p>
 
+<h3>Pitfalls</h3>
+
+<p>
+Some things I've run into which tripped me up:
+</p>
+
+<p>
+<strong>Don't create self-cancelling actions.</strong> Consider this action:
+</p>
+
+<pre>
+MakeMoney = Chain(Lose('coin'), Set(coin=True, jewel=True))
+</pre>
+
+<p>
+This ought to mean that if you have a coin, you also get a jewel. However, writing it this way -- removing and then setting the <code>coin</code> property in the same action -- confuses the optimizer. PlotEx won't recognize this as a strict improvement action, so you'll get the wrong answer. I think. It'll be less efficient, anyhow. Write it this way instead:
+</p>
+
+<pre>
+MakeMoney = Chain(Has(coin=True), Set(jewel=True))
+</pre>
+
+<p>
+<strong>Be careful about "recharge" actions.</strong> Say you have this scenario:
+</p>
+
+<pre>
+Start = State(coin=True)
+
+EnterShop = Once(Set(inshop=True))
+
+BuyInShop = Chain(
+    Lose('inshop', 'coin'),
+    Set(fireball=True))
+</pre>
+
+<p>
+This is fine; you start with a coin, you can enter the shop (just once), you buy a fireball with your coin. (Buying and leaving the shop are stuffed into the same action, for simplicity.) Run this, and PlotEx will correctly declare that the final state looks like:
+</p>
+
+<pre>
+*&lt;fireball _did_entershop&gt;
+  (2): EnterShop, BuyInShop
+</pre>
+
+Later, you decide you want the player to be able to buy *two* fireballs, perhaps after locating a Fez of Awesome Charisma. But you don't want to mess with the existing <code>fireball</code> property. So you decide to patch around it, giving the player a sort of coupon that can be redeemed for a new fireball at any time:
+
+<pre>
+Start = State(coin=True)
+FindFez = Once(Set(fez=True))
+
+EnterShop = Once(Set(inshop=True))
+
+BuyInShop = Chain(
+    Lose('inshop', 'coin'),
+    Set(fireball=True))
+BuyInShopExtra = Chain(
+    Has(fez=True),
+    Lose('inshop', 'coin'),
+    Set(fireball=True, coupon=True))
+
+MoreFire = Chain(Lose('coupon'), Set(fireball=True))
+</pre>
+
+<p>
+Now the final state looks like:
+</p>
+
+<pre>
+*&lt;fez fireball _did_entershop _did_findfez&gt;
+  (3): EnterShop, BuyInShop, FindFez
+</pre>
+
+<p>
+There's no trace of the extra fireball! Or the coupon, or the <code>BuyInShopExtra</code> action. What just happened?
+</p>
+
+<p>
+This setup falls prey to PlotEx's desire to only show us *final* states. If you run with the <code>-a</code> switch, you'll see that the <code>BuyInShopExtra</code> action *is* tried. But the notional player then gets impatient and turns in the coupon (<code>MoreFire</code>) because there's nothing else to do. This sets <code>fireball</code> true, but <code>fireball</code> is already true. So we're back in the state listed above -- but by a less efficient route. PlotEx doesn't bother showing that path, because it's already shown the shorter one.
+</p>
+
+<p>
+Note that this is a display problem, not a failure to find the state. If you add an action sequence that requires two fireballs, PlotEx will correctly steer through it, using <code>MoreFire</code> to reload at the right point. However, when I use PlotEx, I spend a lot of time looking at intermediate states and partial win conditions. So it's worth avoiding these situations, where the player stops halfway and appears to be missing a possibility.
+</p>
+
+<p>
+How to avoid? Use a numeric quality, instead of a "got it" flag and a "reload" flag.
+</p>
+
+<pre>
+Start = State(coin=True)
+FindFez = Once(Set(fez=True))
+
+EnterShop = Once(Set(inshop=True))
+
+BuyInShop = Chain(
+    Lose('inshop', 'coin'),
+    Increment('fireball'))
+BuyInShopExtra = Chain(
+    Has(fez=True),
+    Lose('inshop', 'coin'),
+    Increment('fireball'), Increment('fireball'))
+</pre>
+
+<p>
+(Yeah, I need to add a step-by argument to the <code>Increment</code> action class.) This produces two final outcomes, a much clearer rendering of the situation:
+</p>
+
+<pre>
+&lt;fez fireball=1 _did_entershop _did_findfez&gt;
+  (3): EnterShop, BuyInShop, FindFez
+
+*&lt;fez fireball=2 _did_entershop _did_findfez&gt;
+  (3): EnterShop, FindFez, BuyInShopExtra
+</pre>
+
+
 <hr>
 <p>
-Last updated June 1, 2012.
+Last updated June 3, 2012.
 </p>
 
 <p>
