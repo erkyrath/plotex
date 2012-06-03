@@ -193,8 +193,7 @@ class Graph:
 
         while (newstates):
             if (len(self.seenmaxes) >= limit):
-                print 'WARNING: more than', limit, 'states! Stopping.'
-                break
+                raise Exception('More than %d states!' % (limit,))
             
             oldstate = newstates.pop(0)
             oldnode = self.states[oldstate]
