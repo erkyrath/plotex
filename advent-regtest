@@ -1,0 +1,34 @@
+# advent-regtest: test script for regtest.py
+# For a full description, see <http://eblong.com/zarf/plotex/regtest.html>
+
+** game: /Users/zarf/Documents/IF/Advent.ulx
+** interpreter: /Users/zarf/bin/glulxec -q
+
+* south-from-start
+# A simple, one-command test.
+
+> south
+You are in a valley in the forest beside a stream tumbling along a rocky bed.
+
+
+* in-well-house
+# Test three commands. Lines starting with "!" are negated; lines
+# starting with "/" are regular expressions.
+
+> go east
+There is tasty food here.
+some keys
+!grue
+
+> get all
+/b[aeiou]ttle.*water
+!/^Taken
+
+
+* test-that-fails
+# All three of the tests in this run will fail.
+
+> go east
+There is a bucket of cheese here.
+/[xqz]
+! Inside Building
