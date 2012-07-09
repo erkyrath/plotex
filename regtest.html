@@ -1,0 +1,229 @@
+<!doctype HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>RegTest: Simple IF Regression Tester</title>
+<style type="text/css">
+pre { margin-left: 3em; }
+dl { margin-left: 3em; }
+dt { font-family: monospace; }
+.TestName { color: #00A; }
+.TestCmd { color: #070; }
+.TestComment { color: #900; }
+</style>
+</head>
+<body>
+
+<h2>RegTest: Simple IF Regression Tester</h2>
+
+<p>
+<em>(Release 1.0. The RegTest script is in the public domain.)</em>
+</p>
+
+<ul>
+<li><a href="regtest.py">Look at the RegTest script</a>
+</ul>
+
+<p>
+RegTest is a very simple script for writing IF unit tests. You write down a list of commands and the output you want from each one. RegTest will run the list through your game, and check for that output.
+</p>
+
+<p>
+RegTest can work with any interpreter which uses stdin/stdout, such as DumbFrotz or Glulxe/CheapGlk. (But see "Restrictions", below.)
+</p>
+
+<h3>The Test File</h3>
+
+<p>
+All of what RegTest does is defined by a test file. The easiest way to explain it is to paste one in. (With a soup&#x00E7;on of syntax coloring, for documentation's sake.)
+</p>
+
+<pre>
+<i class="TestComment"># advent-regtest: test script for regtest.py</i>
+<i class="TestComment"># For a full description, see &lt;http://eblong.com/zarf/plotex/regtest.html&gt;</i>
+
+** game: /Users/zarf/Documents/IF/Advent.ulx
+** interpreter: /Users/zarf/bin/glulxec -q
+
+<b class="TestName">* south-from-start</b>
+<i class="TestComment"># A simple, one-command test.</i>
+
+<b class="TestCmd">&gt; south</b>
+You are in a valley in the forest beside a stream tumbling along a rocky bed.
+
+
+<b class="TestName">* in-well-house</b>
+<i class="TestComment"># Test three commands. Lines starting with "!" are negated; lines</i>
+<i class="TestComment"># starting with "/" are regular expressions.</i>
+
+<b class="TestCmd">&gt; go east</b>
+There is tasty food here.
+some keys
+!grue
+
+<b class="TestCmd">&gt; get all</b>
+/b[aeiou]ttle.*water
+!/^Taken
+
+
+<b class="TestName">* test-that-fails</b>
+<i class="TestComment"># All three of the tests in this run will fail.</i>
+
+<b class="TestCmd">&gt; go east</b>
+There is a bucket of cheese here.
+/[xqz]
+! Inside Building
+
+</pre>
+
+<p>
+The first two lines are comments. Lines beginning with "#", and blank lines, are ignored.
+</p>
+
+<p>
+The next two lines (beginning with "**") define test parameters -- the location of the game file and interpreter. The game will be the Glulx version of Adventure (compiled with Inform 6). The interpreter will be Glulxe/CheapGlk. I've defined pathnames in my computer's filesystem; you'd want to change those, of course. (You can also supply these values from the command line.)
+</p>
+
+<p>
+The rest of the test file is a set of <em>tests</em>. Each test is a separate run through the game. A test contains a sequence of <em>commands</em>. A command can contain various <em>checks</em>, validating the output of that command.
+</p>
+
+<p>
+The line <code>"* south-from-start"</code> defines the beginning of the first test. <code>south-from-start</code> is the test name. (You can name tests anything you want; it's just a convenient label.)
+</p>
+
+<p>
+This test contains just one command -- <code>south</code>. The next line is a check: RegTest will search the command's output for this line. It's the room description for the room to the south, obviously.
+</p>
+
+<p>
+The second test is called <code>in-well-house</code>. Here we start by going east. (Note that this test is a fresh start; the previous "south" command was in a different run.)
+</p>
+
+<p>
+We're applying three different checks to the output of "go east". RegTest verifies that <code>"There is tasty food here."</code> occurs somewhere in the output. Then it looks for <code>"some keys"</code>, which also occurs. (It's not a complete line, but that's fine -- the check line just has to occur somewhere in one of the paragraphs that results from the command.)
+</p>
+
+<p>
+A check line starting with "!" is negated: RegTest verifies that <em>none</em> of the output contains the word <code>grue</code>. Which is good, because there are no grues in Colossal Cave.
+</p>
+
+<p>
+These are <em>independent</em> checks; order doesn't matter. (The line about the keys actually occurs before the one about the food.)
+</p>
+
+<p>
+The idea is that you don't usually want to verify every single character of your game output. During development, you're going to be changing descriptions, adding objects, and so on. But you still might want to write a test sequence for particular actions. By checking only for the important bits of each response, you don't have to fix the test every time a room description or timer event changes.
+</p>
+
+<p>
+The next command demonstrates regular expressions. A check line that begins with "/" is matched as a regular expression. (See the Python documentation for the <a href="http://docs.python.org/library/re.html">syntax of regular expressions</a>.) Here we have a (contrived) regex which matches the output line <code>"stream: The bottle is now full of water."</code>
+</p>
+
+<p>
+A line starting with "!/" is, unsurprisingly, a negated regex check. The line <code>"!/^Taken"</code> verifies that no line of the output begins with the word <code>Taken</code>. (The word occurs <em>within</em> several lines, but not at the beginning of any.)
+</p>
+
+<h3>Running the Script</h3>
+
+<p>
+To run all tests, paste the test script into a file, and then type:
+</p>
+
+<pre>
+python regtest.py TESTFILE
+</pre>
+
+<p>
+When you do this, you will see the output:
+</p>
+
+<pre>
+* south-from-start
+* in-well-house
+* test-that-fails
+&lt;LiteralCheck "There is a bucket of cheese here..."&gt;: not found
+&lt;RegExpCheck "[xqz]"&gt;: not found
+&lt;LiteralCheck !"Inside Building"&gt;: inverse test should fail
+
+FAILED: 3 errors
+</pre>
+
+<p>
+The first two tests show no problems. The third fails three checks. When you see failures, you'll probably want to re-run a single test:
+</p>
+
+<pre>
+python regtest.py TESTFILE -v test-that-fails
+</pre>
+
+<p>
+This runs only the specified test. The -v (or --verbose) argument displays the complete transcript of the test run, with the failures marked, so you can see exactly what went wrong.
+</p>
+
+<p>
+You can run several tests by naming them all, or by using a glob-style wildcard. (You'll probably have to quote the wildcard to keep your shell from mangling it.)
+</p>
+
+<pre>
+python regtest.py TESTFILE south-from-start in-well-house
+python regtest.py TESTFILE 'test-*'
+</pre>
+
+<p>
+These options are available:
+</p>
+
+<dl>
+<dt>-g, --game:
+<dd>Specify the location of the game file. (This overrides the <code>**game:</code> line in the test script.)
+<dt>-i, --interpreter:
+<dd>Specify the location of the interpreter. (This overrides the <code>**interpreter:</code> line in the test script.)
+<dt>-l, --list:
+<dd>Do not run the tests; just list them.
+<dt>-v, --verbose:
+<dd>Display the game transcripts as they run.
+</dl>
+
+<h3>Restrictions and Limitations</h3>
+
+<p>
+RegTest handles IF output in a very simplistic way. It will only work with a game that abides by these rules:
+</p>
+
+<p>
+<em>The prompt must always be "&gt;" at the beginning of a line.</em>
+</p>
+
+<p>
+In particular, Inform's "if the player consents" (yes/no) questions will confuse RegTest -- it won't recognize them as input requests. The same goes for menu-based input.
+</p>
+
+<p>
+<em>"&gt;" at the beginning of a line must always be a prompt.</em>
+</p>
+
+<p>
+If your game prints "&gt;" at the beginning of a line, even if text follows, RegTest will think it is an input request and fire the next command.
+</p>
+
+<p>
+(Were I ambitious, I would enhance RegTest to work with RemGlk-enabled interpreters. Then it could recognize all sorts of input requests correctly, and also test the contents of the status window. I have not gotten off my ass to do this work.)
+</p>
+
+<hr>
+<p>
+Last updated July 9, 2012.
+</p>
+
+<p>
+<em>Other IF scripts: <a href="index.html">PlotEx</a></em>
+</p>
+
+<p>
+<em><a href="../home.html">Zarfhome</a></em>
+<em><a href="../sitemap.html#plotex">(map)</a></em>
+<em><a href="../cave/plotex.html">(down)</a></em>
+</p>
+
+</body>
+</html>
