@@ -548,7 +548,7 @@ This is fine; you start with a coin, you can enter the shop (just once), you buy
   (2): EnterShop, BuyInShop
 </pre>
 
-Later, you decide you want the player to be able to buy *two* fireballs, perhaps after locating a Fez of Awesome Charisma. But you don't want to mess with the existing <code>fireball</code> property. So you decide to patch around it, giving the player a sort of coupon that can be redeemed for a new fireball at any time:
+Later, you decide you want the player to be able to buy <em>two</em> fireballs, perhaps after locating a Fez of Awesome Charisma. But you don't want to mess with the existing <code>fireball</code> property. So you decide to patch around it, giving the player a sort of coupon that can be redeemed for a new fireball at any time:
 
 <pre>
 Start = State(coin=True)
@@ -581,7 +581,7 @@ There's no trace of the extra fireball! Or the coupon, or the <code>BuyInShopExt
 </p>
 
 <p>
-This setup falls prey to PlotEx's desire to only show us *final* states. If you run with the <code>-a</code> switch, you'll see that the <code>BuyInShopExtra</code> action *is* tried. But the notional player then gets impatient and turns in the coupon (<code>MoreFire</code>) because there's nothing else to do. This sets <code>fireball</code> true, but <code>fireball</code> is already true. So we're back in the state listed above -- but by a less efficient route. PlotEx doesn't bother showing that path, because it's already shown the shorter one.
+This setup falls prey to PlotEx's desire to only show us <em>final</em> states. If you run with the <code>-a</code> switch, you'll see that the <code>BuyInShopExtra</code> action <em>is</em> tried. But the notional player then gets impatient and turns in the coupon (<code>MoreFire</code>) because there's nothing else to do. This sets <code>fireball</code> true, but <code>fireball</code> is already true. So we're back in the state listed above -- but by a less efficient route. PlotEx doesn't bother showing that path, because it's already shown the shorter one.
 </p>
 
 <p>
