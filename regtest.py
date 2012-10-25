@@ -1,5 +1,5 @@
 # RegTest: a really simple IF regression tester.
-#   Version 1.0
+#   Version 1.1
 #   Andrew Plotkin <erkyrath@eblong.com>
 #   This script is in the public domain.
 #
@@ -19,6 +19,7 @@ import re
 gamefile = None
 terppath = None
 terpargs = []
+precommands = []
 
 testmap = {}
 testls = []
@@ -35,6 +36,9 @@ popt.add_option('-i', '--interpreter', '--terp',
 popt.add_option('-l', '--list',
                 action='store_true', dest='listonly',
                 help='list all tests (or all matching tests)')
+popt.add_option('-p', '--pre', '--precommand',
+                action='append', dest='precommands',
+                help='extra command to execute before (each) test')
 popt.add_option('-v', '--verbose',
                 action='store_true', dest='verbose',
                 help='display the transcripts as they run')
@@ -137,6 +141,8 @@ def parse_tests(filename):
                 continue
             key = ln[:pos].strip()
             val = ln[pos+1:].strip()
+            if (key == 'pre' or key == 'precommand'):
+                precommands.append(Command(val))
             if (key == 'game'):
                 gamefile = val
             if (key == 'interpreter'):
@@ -191,7 +197,7 @@ def run(test):
 
     ls = read_to_prompt(proc.stdout)
 
-    for cmd in test.cmds:
+    for cmd in (precommands + test.cmds):
         if (opts.verbose):
             print '> *%s*' % (cmd.cmd,)
         proc.stdin.write(cmd.cmd+'\n')
@@ -203,7 +209,9 @@ def run(test):
                 totalerrors += 1
                 val = '*** ' if opts.verbose else ''
                 print '%s%s: %s' % (val, check, res)
-    
+
+    proc.stdin.close()
+    proc.stdout.close()
     proc.kill()
     proc.poll()
     
@@ -227,6 +235,10 @@ if (not terppath):
     print 'No interpreter path specified'
     sys.exit(-1)
 
+if (opts.precommands):
+    for cmd in opts.precommands:
+        precommands.append(Command(cmd))
+    
 testcount = 0
 for test in testls:
     for pat in testnames:

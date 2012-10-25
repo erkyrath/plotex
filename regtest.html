@@ -16,7 +16,7 @@ dt { font-family: monospace; }
 <h2>RegTest: Simple IF Regression Tester</h2>
 
 <p>
-<em>(Release 1.0. The RegTest script is in the public domain.)</em>
+<em>(Release 1.1. The RegTest script is in the public domain.)</em>
 </p>
 
 <ul>
@@ -80,7 +80,11 @@ The first two lines are comments. Lines beginning with "#", and blank lines, are
 </p>
 
 <p>
-The next two lines (beginning with "**") define test parameters -- the location of the game file and interpreter. The game will be the <a href="http://ifarchive.org/if-archive/games/glulx/advent.ulx">Glulx version of Adventure</a> (compiled with Inform 6). The interpreter will be Glulxe/CheapGlk. I've defined pathnames in my computer's filesystem; you'd want to change those, of course. (You can also supply these values from the command line.)
+The next two lines (beginning with <code>"**"</code>) define test parameters -- the location of the game file and interpreter. The game will be the <a href="http://ifarchive.org/if-archive/games/glulx/advent.ulx">Glulx version of Adventure</a> (compiled with Inform 6). The interpreter will be Glulxe/CheapGlk. I've defined pathnames in my computer's filesystem; you'd want to change those, of course. (You can also supply these values from the command line.)
+</p>
+
+<p>
+A line beginning with <code>"** precommand:"</code> is an extra command that will be stuck onto the beginning of every test defined in the file.
 </p>
 
 <p>
@@ -104,7 +108,7 @@ We're applying three different checks to the output of "go east". RegTest verifi
 </p>
 
 <p>
-A check line starting with "!" is negated: RegTest verifies that <em>none</em> of the output contains the word <code>grue</code>. Which is good, because there are no grues in Colossal Cave.
+A check line starting with <code>"!"</code> is negated: RegTest verifies that <em>none</em> of the output contains the word <code>grue</code>. Which is good, because there are no grues in Colossal Cave.
 </p>
 
 <p>
@@ -116,11 +120,11 @@ The idea is that you don't usually want to verify every single character of your
 </p>
 
 <p>
-The next command demonstrates regular expressions. A check line that begins with "/" is matched as a regular expression. (See the Python documentation for the <a href="http://docs.python.org/library/re.html">syntax of regular expressions</a>.) Here we have a (contrived) regex which matches the output line <code>"stream: The bottle is now full of water."</code>
+The next command demonstrates regular expressions. A check line that begins with <code>"/"</code> is matched as a regular expression. (See the Python documentation for the <a href="http://docs.python.org/library/re.html">syntax of regular expressions</a>.) Here we have a (contrived) regex which matches the output line <code>"stream: The bottle is now full of water."</code>
 </p>
 
 <p>
-A line starting with "!/" is, unsurprisingly, a negated regex check. The line <code>"!/^Taken"</code> verifies that no line of the output begins with the word <code>Taken</code>. (The word occurs <em>within</em> several lines, but not at the beginning of any.)
+A line starting with <code>"!/"</code> is, unsurprisingly, a negated regex check. The line <code>"!/^Taken"</code> verifies that no line of the output begins with the word <code>Taken</code>. (The word occurs <em>within</em> several lines, but not at the beginning of any.)
 </p>
 
 <h3>Running the Script</h3>
@@ -180,6 +184,8 @@ These options are available:
 <dd>Specify the location of the interpreter. (This overrides the <code>**interpreter:</code> line in the test script.)
 <dt>-l, --list:
 <dd>Do not run the tests; just list them.
+<dt>-p, --precommand:
+<dd>Specify a precommand, which will be run before every test. (This adds to the <code>**precommand:</code> lines in the test script.)
 <dt>-v, --verbose:
 <dd>Display the game transcripts as they run.
 </dl>
@@ -212,7 +218,7 @@ If your game prints "&gt;" at the beginning of a line, even if text follows, Reg
 
 <hr>
 <p>
-Last updated July 9, 2012.
+Last updated October 24, 2012.
 </p>
 
 <p>
