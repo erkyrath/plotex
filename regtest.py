@@ -1,5 +1,5 @@
 # RegTest: a really simple IF regression tester.
-#   Version 1.1
+#   Version 1.2
 #   Andrew Plotkin <erkyrath@eblong.com>
 #   This script is in the public domain.
 #
@@ -52,6 +52,8 @@ if (not args):
 class RegTest:
     def __init__(self, name):
         self.name = name
+        self.gamefile = None   # use global gamefile
+        self.terp = None       # global terppath, terpargs
         self.cmds = []
     def __repr__(self):
         return '<RegTest %s>' % (self.name,)
@@ -141,14 +143,25 @@ def parse_tests(filename):
                 continue
             key = ln[:pos].strip()
             val = ln[pos+1:].strip()
-            if (key == 'pre' or key == 'precommand'):
-                precommands.append(Command(val))
-            if (key == 'game'):
-                gamefile = val
-            if (key == 'interpreter'):
-                subls = val.split()
-                terppath = subls[0]
-                terpargs = subls[1:]
+            if not curtest:
+                if (key == 'pre' or key == 'precommand'):
+                    precommands.append(Command(val))
+                elif (key == 'game'):
+                    gamefile = val
+                elif (key == 'interpreter'):
+                    subls = val.split()
+                    terppath = subls[0]
+                    terpargs = subls[1:]
+                else:
+                    raise Exception('Unknown option: ** ' + key)
+            else:
+                if (key == 'game'):
+                    curtest.gamefile = val
+                elif (key == 'interpreter'):
+                    subls = val.split()
+                    curtest.terp = (subls[0], subls[1:])
+                else:
+                    raise Exception('Unknown option: ** ' + key + ' in * ' + curtest.name)
             continue
         
         if (ln.startswith('*')):
@@ -189,9 +202,16 @@ def read_to_prompt(fl):
     
 def run(test):
     global totalerrors
+
+    testgamefile = gamefile
+    if (test.gamefile):
+        testgamefile = test.gamefile
+    testterppath, testterpargs = (terppath, terpargs)
+    if (test.terp):
+        testterppath, testterpargs = test.terp
     
     print '*', test.name
-    args = [ terppath ] + terpargs + [ gamefile ]
+    args = [ testterppath ] + testterpargs + [ testgamefile ]
     proc = subprocess.Popen(args,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
