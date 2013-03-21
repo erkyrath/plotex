@@ -52,8 +52,12 @@ You are in a valley in the forest beside a stream tumbling along a rocky bed.
 
 
 <b class="TestName">* in-well-house</b>
-<i class="TestComment"># Test three commands. Lines starting with "!" are negated; lines</i>
-<i class="TestComment"># starting with "/" are regular expressions.</i>
+<i class="TestComment"># Test the opening text, followed by two commands. Lines starting</i>
+<i class="TestComment"># with "!" are negated; lines starting with "/" are regular expressions.</i>
+
+Welcome to Adventure!
+Crowther
+Woods
 
 <b class="TestCmd">&gt; go east</b>
 There is tasty food here.
@@ -104,11 +108,11 @@ This test contains just one command -- <code>south</code>. The next line is a ch
 </p>
 
 <p>
-The second test is called <code>in-well-house</code>. Here we start by going east. (Note that this test is a fresh start; the previous "south" command was in a different run.)
+The second test is called <code>in-well-house</code>. Here we start by performing some checks on the banner text of the game. (Note that this test is a fresh start; the previous "south" command was in a different run.) RegTest verifies that <code>"Welcome to Adventure!"</code> occurs somewhere in the game's initial output. Then it looks for <code>"Crowther"</code> and <code>"Woods"</code>, which also occur. (These aren't complete lines, but that's fine -- the check line just has to occur somewhere in one of the paragraphs that begin the game. The two name tests happen to occur in the same line; that's fine too.)
 </p>
 
 <p>
-We're applying three different checks to the output of "go east". RegTest verifies that <code>"There is tasty food here."</code> occurs somewhere in the output. Then it looks for <code>"some keys"</code>, which also occurs. (It's not a complete line, but that's fine -- the check line just has to occur somewhere in one of the paragraphs that results from the command.)
+After the initial text, we go east. We're applying three different checks to the output of "go east". RegTest verifies that <code>"There is tasty food here."</code> and <code>"some keys"</code> both occur. (Remember, we're looking only at the output of the latest command, not the entire transcript.)
 </p>
 
 <p>

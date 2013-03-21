@@ -54,6 +54,7 @@ class RegTest:
         self.name = name
         self.gamefile = None   # use global gamefile
         self.terp = None       # global terppath, terpargs
+        self.precmd = None
         self.cmds = []
     def __repr__(self):
         return '<RegTest %s>' % (self.name,)
@@ -169,9 +170,10 @@ def parse_tests(filename):
             if (ln in testmap):
                 raise Exception('Test name used twice: ' + ln)
             curtest = RegTest(ln)
-            curcmd = None
             testls.append(curtest)
             testmap[curtest.name] = curtest
+            curcmd = Command('(init)')
+            curtest.precmd = curcmd
             continue
 
         if (ln.startswith('>')):
@@ -188,6 +190,8 @@ def read_to_prompt(fl):
     output = []
     while (select.select([fl],[],[])[0] != []):
         ch = fl.read(1)
+        if ch == '':
+            break
         output.append(ch)
         if (output[-2:] == ['\n', '>']):
             break
@@ -216,6 +220,13 @@ def run(test):
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     ls = read_to_prompt(proc.stdout)
+    if (test.precmd):
+        for check in test.precmd.checks:
+            res = check.eval(ls)
+            if (res):
+                totalerrors += 1
+                val = '*** ' if opts.verbose else ''
+                print '%s%s: %s' % (val, check, res)
 
     for cmd in (precommands + test.cmds):
         if (opts.verbose):

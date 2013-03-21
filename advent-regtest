@@ -12,8 +12,12 @@ You are in a valley in the forest beside a stream tumbling along a rocky bed.
 
 
 * in-well-house
-# Test three commands. Lines starting with "!" are negated; lines
-# starting with "/" are regular expressions.
+# Test the opening text, followed by two commands. Lines starting 
+# with "!" are negated; lines starting with "/" are regular expressions.
+
+Welcome to Adventure!
+Crowther
+Woods
 
 > go east
 There is tasty food here.
