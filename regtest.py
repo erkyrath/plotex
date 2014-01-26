@@ -50,6 +50,12 @@ if (not args):
     sys.exit(1)
 
 class RegTest:
+    """RegTest represents one test in the test file. (That is, a block
+    beginning with a single asterisk.)
+
+    A test is one session of the game, from the beginning. (Not necessarily
+    to the end.) After every game command, tests can be run.
+    """
     def __init__(self, name):
         self.name = name
         self.gamefile = None   # use global gamefile
@@ -62,6 +68,9 @@ class RegTest:
         self.cmds.append(cmd)
 
 class Command:
+    """Command is one cycle of a RegTest -- a game input, followed by
+    tests to run on the game's output.
+    """
     def __init__(self, cmd):
         self.cmd = cmd
         self.checks = []
@@ -79,6 +88,12 @@ class Command:
         self.checks.append(check)
 
 class Check:
+    """Represents a single test (applied to the output of a game command).
+    
+    This is a virtual base class. Subclasses should override the subeval()
+    method to examine a list of lines, and return None (on success) or a
+    string (explaining the failure).
+    """
     def eval(self, lines):
         res = self.subeval(lines)
         if (not self.inverse):
@@ -91,6 +106,8 @@ class Check:
         return 'not implemented'
 
 class RegExpCheck(Check):
+    """A Check which looks for a regular expression match in the output.
+    """
     def __init__(self, ln, inverse=False):
         self.inverse = inverse
         self.ln = ln
@@ -107,6 +124,8 @@ class RegExpCheck(Check):
         return 'not found'
         
 class LiteralCheck(Check):
+    """A Check which looks for a literal string match in the output.
+    """
     def __init__(self, ln, inverse=False):
         self.inverse = inverse
         self.ln = ln
@@ -123,6 +142,9 @@ class LiteralCheck(Check):
         return 'not found'
         
 def parse_tests(filename):
+    """Parse the test file. This fills out the testls array, and the
+    other globals which will be used during testing.
+    """
     global gamefile, terppath, terpargs
     
     fl = open(filename)
