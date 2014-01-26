@@ -140,7 +140,46 @@ class LiteralCheck(Check):
             if self.ln in ln:
                 return
         return 'not found'
+
+class GameState:
+    def __init__(self, infile, outfile):
+        self.infile = infile
+        self.outfile = outfile
+        self.statuswin = []
+        self.storywin = []
+
+    def perform_input(self, cmd):
+        raise Exception('perform_input not implemented')
         
+    def accept_output(self):
+        raise Exception('accept_output not implemented')
+
+class GameStateCheap(GameState):
+
+    def perform_input(self, cmd):
+        self.infile.write(cmd+'\n')
+        self.infile.flush()
+
+    def accept_output(self):
+        self.storywin = []
+        output = []
+        while (select.select([self.outfile],[],[])[0] != []):
+            ch = self.outfile.read(1)
+            if ch == '':
+                break
+            output.append(ch)
+            if (output[-2:] == ['\n', '>']):
+                break
+        dat = ''.join(output)
+        res = dat.split('\n')
+        if (opts.verbose):
+            for ln in res:
+                if (ln == '>'):
+                    continue
+                print ln
+        self.storywin = res
+    
+
 def parse_tests(filename):
     """Parse the test file. This fills out the testls array, and the
     other globals which will be used during testing.
@@ -208,24 +247,7 @@ def parse_tests(filename):
 
     fl.close()
 
-def read_to_prompt(fl):
-    output = []
-    while (select.select([fl],[],[])[0] != []):
-        ch = fl.read(1)
-        if ch == '':
-            break
-        output.append(ch)
-        if (output[-2:] == ['\n', '>']):
-            break
-    dat = ''.join(output)
-    res = dat.split('\n')
-    if (opts.verbose):
-        for ln in res:
-            if (ln == '>'):
-                continue
-            print ln
-    return res
-    
+
 def run(test):
     global totalerrors
 
@@ -240,8 +262,11 @@ def run(test):
     args = [ testterppath ] + testterpargs + [ testgamefile ]
     proc = subprocess.Popen(args,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-
-    ls = read_to_prompt(proc.stdout)
+    
+    gamestate = GameStateCheap(proc.stdin, proc.stdout)
+    
+    gamestate.accept_output()
+    ls = gamestate.storywin
     if (test.precmd):
         for check in test.precmd.checks:
             res = check.eval(ls)
@@ -253,9 +278,9 @@ def run(test):
     for cmd in (precommands + test.cmds):
         if (opts.verbose):
             print '> *%s*' % (cmd.cmd,)
-        proc.stdin.write(cmd.cmd+'\n')
-        proc.stdin.flush()
-        ls = read_to_prompt(proc.stdout)
+        gamestate.perform_input(cmd.cmd)
+        gamestate.accept_output()
+        ls = gamestate.storywin
         for check in cmd.checks:
             res = check.eval(ls)
             if (res):
@@ -263,6 +288,7 @@ def run(test):
                 val = '*** ' if opts.verbose else ''
                 print '%s%s: %s' % (val, check, res)
 
+    gamestate = None
     proc.stdin.close()
     proc.stdout.close()
     proc.kill()
