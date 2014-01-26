@@ -19,6 +19,7 @@ import re
 gamefile = None
 terppath = None
 terpargs = []
+remformat = False
 precommands = []
 
 testmap = {}
@@ -39,6 +40,9 @@ popt.add_option('-l', '--list',
 popt.add_option('-p', '--pre', '--precommand',
                 action='append', dest='precommands',
                 help='extra command to execute before (each) test')
+popt.add_option('-r', '--rem',
+                action='store_true', dest='remformat',
+                help='the interpreter uses RemGlk (JSON) format')
 popt.add_option('-v', '--verbose',
                 action='store_true', dest='verbose',
                 help='display the transcripts as they run')
@@ -204,12 +208,14 @@ class GameStateCheap(GameState):
                 print ln
         self.storywin = res
     
+class GameStateRemGlk(GameState):
+    pass
 
 def parse_tests(filename):
     """Parse the test file. This fills out the testls array, and the
     other globals which will be used during testing.
     """
-    global gamefile, terppath, terpargs
+    global gamefile, terppath, terpargs, remformat
     
     fl = open(filename)
     curtest = None
@@ -239,6 +245,8 @@ def parse_tests(filename):
                     subls = val.split()
                     terppath = subls[0]
                     terpargs = subls[1:]
+                elif (key == 'remformat'):
+                    remformat = (val.lower() > 'og')
                 else:
                     raise Exception('Unknown option: ** ' + key)
             else:
@@ -287,8 +295,11 @@ def run(test):
     args = [ testterppath ] + testterpargs + [ testgamefile ]
     proc = subprocess.Popen(args,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    
-    gamestate = GameStateCheap(proc.stdin, proc.stdout)
+
+    if (not remformat):
+        gamestate = GameStateCheap(proc.stdin, proc.stdout)
+    else:
+        gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
     
     gamestate.accept_output()
     if (test.precmd):
@@ -336,6 +347,8 @@ if (opts.terppath):
 if (not terppath):
     print 'No interpreter path specified'
     sys.exit(-1)
+if (opts.remformat):
+    remformat = True
 
 if (opts.precommands):
     for cmd in opts.precommands:
