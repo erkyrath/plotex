@@ -177,6 +177,9 @@ class GameState:
         self.statuswin = []
         self.storywin = []
 
+    def initialize(self):
+        pass
+
     def perform_input(self, cmd):
         raise Exception('perform_input not implemented')
         
@@ -209,7 +212,68 @@ class GameStateCheap(GameState):
         self.storywin = res
     
 class GameStateRemGlk(GameState):
-    pass
+    
+    def initialize(self):
+        import json
+        update = { 'type':'init', 'gen':0,
+                   'metrics': { 'width':80, 'height':40 },
+                   }
+        cmd = json.dumps(update)
+        self.infile.write(cmd+'\n')
+        self.infile.flush()
+        self.generation = 0
+        self.lineinputwin = None
+        self.charinputwin = None
+        
+    def perform_input(self, cmd):
+        import json
+        if not self.lineinputwin:
+            raise Exception('Game is not expecting line input')
+        update = { 'type':'line', 'gen':self.generation,
+                   'window':self.lineinputwin, 'value':cmd
+                   }
+        cmd = json.dumps(update)
+        self.infile.write(cmd+'\n')
+        self.infile.flush()
+        
+        
+    def accept_output(self):
+        import json
+        self.storywin = []
+        output = []
+        update = None
+        while (select.select([self.outfile],[],[])[0] != []):
+            ch = self.outfile.read(1)
+            if ch == '':
+                dat = ''.join(output)
+                update = json.loads(dat)
+                break
+            output.append(ch)
+            if (output[-1] == '}'):
+                dat = ''.join(output)
+                try:
+                    update = json.loads(dat)
+                    break
+                except:
+                    pass
+        print '###', update
+
+        self.generation = update.get('gen')
+
+        inputs = update.get('input')
+        if inputs is not None:
+            self.lineinputwin = None
+            self.charinputwin = None
+            for input in inputs:
+                if input.get('type') == 'line':
+                    if self.lineinputwin:
+                        raise Exception('Multiple windows accepting line input')
+                    self.lineinputwin = input.get('id')
+                if input.get('type') == 'char':
+                    if self.charinputwin:
+                        raise Exception('Multiple windows accepting char input')
+                    self.charinputwin = input.get('id')
+
 
 def parse_tests(filename):
     """Parse the test file. This fills out the testls array, and the
@@ -300,7 +364,8 @@ def run(test):
         gamestate = GameStateCheap(proc.stdin, proc.stdout)
     else:
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
-    
+
+    gamestate.initialize()
     gamestate.accept_output()
     if (test.precmd):
         for check in test.precmd.checks:
