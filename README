@@ -1,0 +1,10 @@
+RegTest and PlotEx
+Andrew Plotkin <erkyrath@eblong.com>
+
+This repository contains two different Python tools. They're jammed
+together in one repo because I'm lazy.
+
+- RegTest: a simple IF regression tester
+- PlotEx: a tool for exploring puzzle plot constraints
+
+Both scripts are in the public domain. Or CC0 1.0 Universal, if you like.
