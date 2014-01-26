@@ -16,7 +16,7 @@ dt { font-family: monospace; }
 <h2>RegTest: Simple IF Regression Tester</h2>
 
 <p>
-<em>(Release 1.2. The RegTest script is in the public domain.)</em>
+<em>(Release 1.3. The RegTest script is in the public domain.)</em>
 </p>
 
 <ul>
@@ -116,7 +116,7 @@ After the initial text, we go east. We're applying three different checks to the
 </p>
 
 <p>
-A check line starting with <code>"!"</code> is negated: RegTest verifies that <em>none</em> of the output contains the word <code>grue</code>. Which is good, because there are no grues in Colossal Cave.
+A check line starting with <code>"!"</code> is negated: RegTest verifies that <em>none</em> of the output contains the word <code>grue</code>. Which is good, because there are no grues in Colossal Cave. You can also use <code>"{invert}"</code> as the line prefix.
 </p>
 
 <p>
@@ -128,7 +128,7 @@ The idea is that you don't usually want to verify every single character of your
 </p>
 
 <p>
-The next command demonstrates regular expressions. A check line that begins with <code>"/"</code> is matched as a regular expression. (See the Python documentation for the <a href="http://docs.python.org/library/re.html">syntax of regular expressions</a>.) Here we have a (contrived) regex which matches the output line <code>"stream: The bottle is now full of water."</code>
+The next command demonstrates regular expressions. A check line that begins with <code>"/"</code> is matched as a regular expression. (See the Python documentation for the <a href="http://docs.python.org/2/library/re.html">syntax of regular expressions</a>.) Here we have a (contrived) regex which matches the output line <code>"stream: The bottle is now full of water."</code>
 </p>
 
 <p>
@@ -226,7 +226,7 @@ If your game prints "&gt;" at the beginning of a line, even if text follows, Reg
 
 <hr>
 <p>
-Last updated March 10, 2013.
+Last updated January 26, 2014.
 </p>
 
 <p>
