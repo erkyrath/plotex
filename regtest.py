@@ -222,6 +222,7 @@ class GameStateRemGlk(GameState):
         self.infile.write(cmd+'\n')
         self.infile.flush()
         self.generation = 0
+        self.windows = {}
         self.lineinputwin = None
         self.charinputwin = None
         
@@ -236,10 +237,8 @@ class GameStateRemGlk(GameState):
         self.infile.write(cmd+'\n')
         self.infile.flush()
         
-        
     def accept_output(self):
         import json
-        self.storywin = []
         output = []
         update = None
         while (select.select([self.outfile],[],[])[0] != []):
@@ -256,9 +255,38 @@ class GameStateRemGlk(GameState):
                     break
                 except:
                     pass
-        print '###', update
 
         self.generation = update.get('gen')
+
+        windows = update.get('windows')
+        if windows is not None:
+            self.windows = {}
+            for win in windows:
+                id = win.get('id')
+                self.windows[id] = win
+
+        contents = update.get('content')
+        if contents is not None:
+            for content in contents:
+                id = content.get('id')
+                win = self.windows.get(id)
+                if not win:
+                    raise Exception('No such window')
+                if win.get('type') == 'buffer':
+                    self.storywin = []
+                    text = content.get('text')
+                    for line in text:
+                        dat = []
+                        con = line.get('content')
+                        if con:
+                            for val in con:
+                                dat.append(val.get('text'))
+                        dat = ''.join(dat)
+                        if line.get('append') and len(self.storywin):
+                            self.storywin[-1] += dat
+                        else:
+                            self.storywin.append(dat)
+                    print '### storywin:', self.storywin
 
         inputs = update.get('input')
         if inputs is not None:
