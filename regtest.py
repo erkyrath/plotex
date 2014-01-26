@@ -78,23 +78,46 @@ class Command:
         return '<Command "%s">' % (self.cmd,)
     def addcheck(self, ln):
         inverse = False
-        if (ln.startswith('!')):
-            inverse = True
-            ln = ln[1:].strip()
+        instatus = False
+        # First peel off "!" and "{...}" prefixes
+        while True:
+            match = re.match('!|{[a-z]*}', ln)
+            if not match:
+                break
+            ln = ln[match.end() : ].strip()
+            val = match.group()
+            if val == '!' or val == '{invert}':
+                inverse = True
+            elif val == '{status}':
+                instatus = True
+            else:
+                raise Exception('Unknown test modifier: %s' % (val,))
+        # Then the test itself, which may have many formats
         if (ln.startswith('/')):
-            check = RegExpCheck(ln[1:].strip(), inverse)
+            check = RegExpCheck(ln[1:].strip(), inverse=inverse, instatus=instatus)
         else:
-            check = LiteralCheck(ln, inverse)
+            check = LiteralCheck(ln, inverse=inverse, instatus=instatus)
         self.checks.append(check)
 
 class Check:
     """Represents a single test (applied to the output of a game command).
+
+    This can be applied to the story window or the status window;
+    it can apply direct or inverted. (The model is simplistic and assumes
+    there is exactly one story window and at most one status window.)
     
     This is a virtual base class. Subclasses should override the subeval()
     method to examine a list of lines, and return None (on success) or a
     string (explaining the failure).
     """
-    def eval(self, lines):
+    inverse = False
+    instatus = False
+    
+    def eval(self, state):
+        if self.instatus:
+            lines = state.statuswin
+        else:
+            lines = state.storywin
         res = self.subeval(lines)
         if (not self.inverse):
             return res
@@ -108,8 +131,9 @@ class Check:
 class RegExpCheck(Check):
     """A Check which looks for a regular expression match in the output.
     """
-    def __init__(self, ln, inverse=False):
+    def __init__(self, ln, inverse=False, instatus=False):
         self.inverse = inverse
+        self.instatus = instatus
         self.ln = ln
     def __repr__(self):
         val = self.ln
@@ -126,8 +150,9 @@ class RegExpCheck(Check):
 class LiteralCheck(Check):
     """A Check which looks for a literal string match in the output.
     """
-    def __init__(self, ln, inverse=False):
+    def __init__(self, ln, inverse=False, instatus=False):
         self.inverse = inverse
+        self.instatus = instatus
         self.ln = ln
     def __repr__(self):
         val = self.ln
@@ -266,10 +291,9 @@ def run(test):
     gamestate = GameStateCheap(proc.stdin, proc.stdout)
     
     gamestate.accept_output()
-    ls = gamestate.storywin
     if (test.precmd):
         for check in test.precmd.checks:
-            res = check.eval(ls)
+            res = check.eval(gamestate)
             if (res):
                 totalerrors += 1
                 val = '*** ' if opts.verbose else ''
@@ -280,9 +304,8 @@ def run(test):
             print '> *%s*' % (cmd.cmd,)
         gamestate.perform_input(cmd.cmd)
         gamestate.accept_output()
-        ls = gamestate.storywin
         for check in cmd.checks:
-            res = check.eval(ls)
+            res = check.eval(gamestate)
             if (res):
                 totalerrors += 1
                 val = '*** ' if opts.verbose else ''
