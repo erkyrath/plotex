@@ -208,7 +208,9 @@ class GameState:
 class GameStateCheap(GameState):
 
     def perform_input(self, cmd):
-        self.infile.write(cmd+'\n')
+        if cmd.type != 'line':
+            raise Exception('Cheap mode only supports line input')
+        self.infile.write(cmd.cmd+'\n')
         self.infile.flush()
 
     def accept_output(self):
@@ -256,11 +258,20 @@ class GameStateRemGlk(GameState):
         
     def perform_input(self, cmd):
         import json
-        if not self.lineinputwin:
-            raise Exception('Game is not expecting line input')
-        update = { 'type':'line', 'gen':self.generation,
-                   'window':self.lineinputwin, 'value':cmd
-                   }
+        if cmd.type == 'line':
+            if not self.lineinputwin:
+                raise Exception('Game is not expecting line input')
+            update = { 'type':'line', 'gen':self.generation,
+                       'window':self.lineinputwin, 'value':cmd.cmd
+                       }
+        elif cmd.type == 'char':
+            if not self.charinputwin:
+                raise Exception('Game is not expecting char input')
+            update = { 'type':'char', 'gen':self.generation,
+                       'window':self.charinputwin, 'value':cmd.cmd
+                       }
+        else:
+            raise Exception('Rem mode does not recognize command type: %s' % (cmd.type))
         cmd = json.dumps(update)
         self.infile.write(cmd+'\n')
         self.infile.flush()
@@ -407,6 +418,7 @@ def parse_tests(filename):
             continue
 
         if (ln.startswith('>')):
+            # Peel off the "{...}" prefix, if found.
             match = re.match('>{([a-z]*)}', ln)
             if not match:
                 cmdtype = 'line'
@@ -456,8 +468,11 @@ def run(test):
     
         for cmd in (precommands + test.cmds):
             if (opts.verbose):
-                print '> *%s*' % (cmd.cmd,)
-            gamestate.perform_input(cmd.cmd)
+                if cmd.type == 'line':
+                    print '> *%s*' % (cmd.cmd,)
+                else:
+                    print '> {%s} *%s*' % (cmd.type, repr(cmd.cmd),)
+            gamestate.perform_input(cmd)
             gamestate.accept_output()
             for check in cmd.checks:
                 res = check.eval(gamestate)
