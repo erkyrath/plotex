@@ -333,11 +333,13 @@ class GameStateRemGlk(GameState):
                     if text:
                         for line in text:
                             dat = self.extract_text(line)
+                            if (opts.verbose):
+                                if (dat != '>'):
+                                    print dat
                             if line.get('append') and len(self.storywin):
                                 self.storywin[-1] += dat
                             else:
                                 self.storywin.append(dat)
-                    print '### storywin:', self.storywin
                 elif win.get('type') == 'grid':
                     lines = content.get('lines')
                     for line in lines:
@@ -345,7 +347,6 @@ class GameStateRemGlk(GameState):
                         dat = self.extract_text(line)
                         if linenum >= 0 and linenum < len(self.statuswin):
                             self.statuswin[linenum] = dat
-                    print '### statuswin:', self.statuswin
 
         inputs = update.get('input')
         if inputs is not None:
