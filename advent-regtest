@@ -40,7 +40,8 @@ There is a bucket of cheese here.
 
 * remglk-test
 # This test will only work if your interpreter uses the RemGlk library,
-# and regtest is invoked with the --rem option
+# and regtest is invoked with the --rem option. Otherwise, you'll see
+# three test failures.
 
 > go east
 {status} Inside Building

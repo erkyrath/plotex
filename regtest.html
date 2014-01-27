@@ -77,6 +77,34 @@ There is a bucket of cheese here.
 /[xqz]
 ! Inside Building
 
+<b class="TestName">* remglk-test</b>
+<i class="TestComment"># This test will only work if your interpreter uses the RemGlk library,</i>
+<i class="TestComment"># and regtest is invoked with the --rem option. Otherwise, you'll see</i>
+<i class="TestComment"># three test failures.</i>
+
+<b class="TestCmd">&gt; go east</b>
+{status} Inside Building
+spring
+
+<b class="TestCmd">&gt; help</b>
+{status} About Adventure
+
+<b class="TestCmd">&gt;{char} N</b>
+
+<b class="TestCmd">&gt;{char} N</b>
+
+<b class="TestCmd">&gt;{char}</b>
+The probabilities are as in the original game.
+
+<b class="TestCmd">&gt;{char} 32</b>
+
+<b class="TestCmd">&gt;{char} Q</b>
+{status} Score
+You are inside a building
+
+<b class="TestCmd">&gt; get food</b>
+Taken.
+
 </pre>
 
 <p>
@@ -135,6 +163,10 @@ The next command demonstrates regular expressions. A check line that begins with
 A line starting with <code>"!/"</code> is, unsurprisingly, a negated regex check. The line <code>"!/^Taken"</code> verifies that no line of the output begins with the word <code>Taken</code>. (The word occurs <em>within</em> several lines, but not at the beginning of any.)
 </p>
 
+<p>
+The last test, <code>remglk-test</code>, is its own crazy thing. We will discuss it momentarily.
+</p>
+
 <h3>Running the Script</h3>
 
 <p>
@@ -156,12 +188,16 @@ When you do this, you will see the output:
 &lt;LiteralCheck "There is a bucket of cheese here..."&gt;: not found
 &lt;RegExpCheck "[xqz]"&gt;: not found
 &lt;LiteralCheck !"Inside Building"&gt;: inverse test should fail
+* remglk-test
+&lt;LiteralCheck "Inside Building"&gt;: not found
+&lt;LiteralCheck "About Adventure"&gt;: not found
+Exception: Cheap mode only supports line input
 
-FAILED: 3 errors
+FAILED: 6 errors
 </pre>
 
 <p>
-The first two tests show no problems. The third fails three checks. When you see failures, you'll probably want to re-run a single test:
+The first two tests show no problems. The other two fail three checks each. When you see failures, you'll probably want to re-run a single test:
 </p>
 
 <pre>
@@ -194,14 +230,16 @@ These options are available:
 <dd>Do not run the tests; just list them.
 <dt>-p, --precommand:
 <dd>Specify a precommand, which will be run before every test. You can give several precommands. (These add to the <code>**precommand:</code> lines in the test script.)
+<dt>-r, --rem:
+<dd>The interpreter uses RemGlk (JSON) format.
 <dt>-v, --verbose:
 <dd>Display the game transcripts as they run.
 </dl>
 
-<h3>Restrictions and Limitations</h3>
+<h3>Limitations on Cheap Mode</h3>
 
 <p>
-RegTest handles IF output in a very simplistic way. It will only work with a game that abides by these rules:
+Normally, RegTest handles IF output in a very simplistic way. Because the stdin/stdout model has no facility for a status line, there's no way to test the status line's contents. Also, RegTest will only work with a game that abides by these rules:
 </p>
 
 <p>
@@ -221,12 +259,50 @@ If your game prints "&gt;" at the beginning of a line, even if text follows, Reg
 </p>
 
 <p>
-(Were I ambitious, I would enhance RegTest to work with <a href="http://eblong.com/zarf/glk/remglk/docs.html">RemGlk</a>-enabled interpreters. Then it could recognize all sorts of input requests correctly, and also test the contents of the status window. I have not gotten off my ass to do this work.)
+This is not very flexible. Can we do better? We can -- but we'll require a special interpreter.
+</p>
+
+<h3>RemGlk Mode</h3>
+
+<p>
+If your interpreter is compiled with the <a href="http://eblong.com/zarf/glk/remglk/docs.html">RemGlk</a> library, it will output the full display state of the game, structured as a JSON file. This means that RegTest can see the contents of the status line, and handle more complex I/O requests.
+</p>
+
+<p>
+(The JSON format for the game's output, and its input, is described in <a href="http://eblong.com/zarf/glk/glkote/docs.html">this document</a>. But you don't need to understand the details to use RegTest.)
+</p>
+
+<p>
+The last test in the test file, <code>remglk-test</code>, makes use of this feature. To make it work, compile Glulxe and RemGlk, and then change the <code>**interpreter</code> line to refer to the new interpreter binary. You can then run RegTest with the <code>--rem</code> option. (This tells RegTest to expect JSON-formatted output, rather than plain text.)
+</p>
+
+<pre>
+python regtest.py --rem TESTFILE
+</pre>
+
+<p>
+The <code>remglk-test</code> will now succeed. (<code>test-that-fails</code> will still throw its three errors.)
+</p>
+
+<p>
+The test demonstrates two special features:
+</p>
+
+<p>
+A test line starting with <code>{status}</code> tests the contents of the status window, rather than the story window.
+</p>
+
+<p>
+An input line starting with <code>&gt;{char}</code> is character (keystroke) input, rather than line input. The line should contain a single character, or a (decimal) ASCII or Unicode code. <code>&gt;{char}</code> with nothing following indicates a Return keystroke. RegTest will be able to tell whether the game is expecting line or character input, and will report an error if your script offers the wrong one.
+</p>
+
+<p>
+In <code>remglk-test</code> we enter the game menus by typing "help"; we then navigate to one of the menu options and trigger it. We test the option's output -- this is the "How authentic is this edition?" text. Then we hit space (ASCII 32) to return to the menu, then "Q" to return to the game. We can then proceed with game commands as before.
 </p>
 
 <hr>
 <p>
-Last updated January 26, 2014.
+Last updated January 27, 2014.
 </p>
 
 <p>
