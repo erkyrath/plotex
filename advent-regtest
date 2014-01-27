@@ -36,3 +36,31 @@ some keys
 There is a bucket of cheese here.
 /[xqz]
 ! Inside Building
+
+
+* remglk-test
+# This test will only work if your interpreter uses the RemGlk library,
+# and regtest is invoked with the --rem option
+
+> go east
+{status} Inside Building
+spring
+
+> help
+{status} About Adventure
+
+>{char} N
+
+>{char} N
+
+>{char}
+The probabilities are as in the original game.
+
+>{char} 32
+
+>{char} Q
+{status} Score
+You are inside a building
+
+> get food
+Taken.
