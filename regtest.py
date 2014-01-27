@@ -444,7 +444,7 @@ def run(test):
     except Exception, ex:
         totalerrors += 1
         val = '*** ' if opts.verbose else ''
-        print '%s%s' % (val, ex)
+        print '%s%s: %s' % (val, ex.__class__.__name__, ex)
 
     gamestate = None
     proc.stdin.close()
