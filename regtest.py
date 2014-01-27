@@ -418,27 +418,33 @@ def run(test):
     else:
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
 
-    gamestate.initialize()
-    gamestate.accept_output()
-    if (test.precmd):
-        for check in test.precmd.checks:
-            res = check.eval(gamestate)
-            if (res):
-                totalerrors += 1
-                val = '*** ' if opts.verbose else ''
-                print '%s%s: %s' % (val, check, res)
-
-    for cmd in (precommands + test.cmds):
-        if (opts.verbose):
-            print '> *%s*' % (cmd.cmd,)
-        gamestate.perform_input(cmd.cmd)
+    try:
+        gamestate.initialize()
         gamestate.accept_output()
-        for check in cmd.checks:
-            res = check.eval(gamestate)
-            if (res):
-                totalerrors += 1
-                val = '*** ' if opts.verbose else ''
-                print '%s%s: %s' % (val, check, res)
+        if (test.precmd):
+            for check in test.precmd.checks:
+                res = check.eval(gamestate)
+                if (res):
+                    totalerrors += 1
+                    val = '*** ' if opts.verbose else ''
+                    print '%s%s: %s' % (val, check, res)
+    
+        for cmd in (precommands + test.cmds):
+            if (opts.verbose):
+                print '> *%s*' % (cmd.cmd,)
+            gamestate.perform_input(cmd.cmd)
+            gamestate.accept_output()
+            for check in cmd.checks:
+                res = check.eval(gamestate)
+                if (res):
+                    totalerrors += 1
+                    val = '*** ' if opts.verbose else ''
+                    print '%s%s: %s' % (val, check, res)
+
+    except Exception, ex:
+        totalerrors += 1
+        val = '*** ' if opts.verbose else ''
+        print '%s%s' % (val, ex)
 
     gamestate = None
     proc.stdin.close()
