@@ -273,6 +273,18 @@ class GameStateRemGlk(GameState):
             for win in windows:
                 id = win.get('id')
                 self.windows[id] = win
+            grids = [ win for win in self.windows.values() if win.get('type') == 'grid' ]
+            if len(grids) > 1:
+                raise Exception('Cannot handle more than one grid window')
+            if not grids:
+                self.statuswin = []
+            else:
+                win = grids[0]
+                height = win.get('gridheight', 0)
+                if height < len(self.statuswin):
+                    self.statuswin = self.statuswin[0:height]
+                while height > len(self.statuswin):
+                    self.statuswin.append('')
 
         contents = update.get('content')
         if contents is not None:
@@ -284,15 +296,22 @@ class GameStateRemGlk(GameState):
                 if win.get('type') == 'buffer':
                     self.storywin = []
                     text = content.get('text')
-                    for line in text:
-                        dat = self.extract_text(line)
-                        if line.get('append') and len(self.storywin):
-                            self.storywin[-1] += dat
-                        else:
-                            self.storywin.append(dat)
+                    if text:
+                        for line in text:
+                            dat = self.extract_text(line)
+                            if line.get('append') and len(self.storywin):
+                                self.storywin[-1] += dat
+                            else:
+                                self.storywin.append(dat)
                     print '### storywin:', self.storywin
-                elif win.get('type') == 'buffer':
-                    pass ###
+                elif win.get('type') == 'grid':
+                    lines = content.get('lines')
+                    for line in lines:
+                        linenum = line.get('line')
+                        dat = self.extract_text(line)
+                        if linenum >= 0 and linenum < len(self.statuswin):
+                            self.statuswin[linenum] = dat
+                    print '### statuswin:', self.statuswin
 
         inputs = update.get('input')
         if inputs is not None:
