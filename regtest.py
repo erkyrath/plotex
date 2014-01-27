@@ -267,8 +267,12 @@ class GameStateRemGlk(GameState):
         elif cmd.type == 'char':
             if not self.charinputwin:
                 raise Exception('Game is not expecting char input')
+            val = cmd.cmd
+            if val == '\n':
+                val = 'return'
+            # We should handle arrow keys, too
             update = { 'type':'char', 'gen':self.generation,
-                       'window':self.charinputwin, 'value':cmd.cmd
+                       'window':self.charinputwin, 'value':val
                        }
         else:
             raise Exception('Rem mode does not recognize command type: %s' % (cmd.type))
