@@ -75,8 +75,27 @@ class Command:
     """Command is one cycle of a RegTest -- a game input, followed by
     tests to run on the game's output.
     """
-    def __init__(self, cmd):
-        self.cmd = cmd
+    def __init__(self, cmd, type='line'):
+        self.type = type
+        if self.type == 'line':
+            self.cmd = cmd
+        elif self.type == 'char':
+            self.cmd = None
+            if len(cmd) == 0:
+                self.cmd = '\n'
+            elif len(cmd) == 1:
+                self.cmd = cmd
+            elif cmd.lower().startswith('0x'):
+                self.cmd = unichr(int(cmd[2:], 16))
+            else:
+                try:
+                    self.cmd = unichr(int(cmd))
+                except:
+                    pass
+            if self.cmd is None:
+                raise Exception('Unable to interpret char "%s"' % (cmd,))
+        else:
+            raise Exception('Unknown command type: %s' % (type,))
         self.checks = []
     def __repr__(self):
         return '<Command "%s">' % (self.cmd,)
@@ -388,8 +407,14 @@ def parse_tests(filename):
             continue
 
         if (ln.startswith('>')):
-            ln = ln[1:].strip()
-            curcmd = Command(ln)
+            match = re.match('>{([a-z]*)}', ln)
+            if not match:
+                cmdtype = 'line'
+                ln = ln[1:].strip()
+            else:
+                cmdtype = match.group(1)
+                ln = ln[match.end() : ].strip()
+            curcmd = Command(ln, type=cmdtype)
             curtest.addcmd(curcmd)
             continue
 
