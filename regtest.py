@@ -129,7 +129,7 @@ class Check:
     it can apply direct or inverted. (The model is simplistic and assumes
     there is exactly one story window and at most one status window.)
     
-    This is a virtual base class. Subclasses should override the subeval()
+    This is a virtual base class. Subclasses should customize the subeval()
     method to examine a list of lines, and return None (on success) or a
     string (explaining the failure).
     """
@@ -190,6 +190,18 @@ class LiteralCheck(Check):
         return 'not found'
 
 class GameState:
+    """The GameState class wraps the connection to the interpreter subprocess
+    (the pipe in and out streams). It's responsible for sending commands
+    to the interpreter, and receiving the game output back.
+
+    Currently this class is set up to manage exactly one story window
+    and exactly one status window. (A missing window is treated as blank.)
+    This is not very general -- we should understand the notion of multiple
+    windows -- but it's adequate for now.
+
+    This is a virtual base class. Subclasses should customize the
+    initialize, perform_input, and accept_output methods.
+    """
     def __init__(self, infile, outfile):
         self.infile = infile
         self.outfile = outfile
@@ -206,6 +218,10 @@ class GameState:
         raise Exception('accept_output not implemented')
 
 class GameStateCheap(GameState):
+    """Wrapper for a simple stdin/stdout (dumb terminal) interpreter.
+    This class never fills in the status window -- that's always blank.
+    It can only handle line input (not character input).
+    """
 
     def perform_input(self, cmd):
         if cmd.type != 'line':
@@ -233,6 +249,12 @@ class GameStateCheap(GameState):
         self.storywin = res
     
 class GameStateRemGlk(GameState):
+    """Wrapper for a RemGlk-based interpreter. This can in theory handle
+    any I/O supported by Glk. But the current implementation is limited
+    to line and char input, and no more than one status (grid) window.
+    Multiple story (buffer) windows are accepted, but their output for
+    a given turn is agglomerated.
+    """
 
     @staticmethod
     def extract_text(line):
@@ -284,20 +306,29 @@ class GameStateRemGlk(GameState):
         import json
         output = []
         update = None
+
+        # Read until a complete JSON object comes through the pipe.
+        # We sneakily rely on the fact that RemGlk always uses dicts
+        # as the JSON object, so it always ends with "}".
         while (select.select([self.outfile],[],[])[0] != []):
             ch = self.outfile.read(1)
             if ch == '':
+                # End of stream. Hopefully we have a valid object.
                 dat = ''.join(output)
                 update = json.loads(dat)
                 break
             output.append(ch)
             if (output[-1] == '}'):
+                # Test and see if we have a valid object.
                 dat = ''.join(output)
                 try:
                     update = json.loads(dat)
                     break
                 except:
                     pass
+
+        # Parse the update object. This is complicated. For the format,
+        # see http://eblong.com/zarf/glk/glkote/docs.html
 
         self.generation = update.get('gen')
 
@@ -441,6 +472,8 @@ def parse_tests(filename):
 
 
 def run(test):
+    """Run a single RegTest.
+    """
     global totalerrors
 
     testgamefile = gamefile
