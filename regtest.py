@@ -212,6 +212,15 @@ class GameStateCheap(GameState):
         self.storywin = res
     
 class GameStateRemGlk(GameState):
+
+    @staticmethod
+    def extract_text(line):
+        # Extract the text from a line object, ignoring styles.
+        con = line.get('content')
+        if not con:
+            return ''
+        dat = [ val.get('text') for val in con ]
+        return ''.join(dat)
     
     def initialize(self):
         import json
@@ -276,17 +285,14 @@ class GameStateRemGlk(GameState):
                     self.storywin = []
                     text = content.get('text')
                     for line in text:
-                        dat = []
-                        con = line.get('content')
-                        if con:
-                            for val in con:
-                                dat.append(val.get('text'))
-                        dat = ''.join(dat)
+                        dat = self.extract_text(line)
                         if line.get('append') and len(self.storywin):
                             self.storywin[-1] += dat
                         else:
                             self.storywin.append(dat)
                     print '### storywin:', self.storywin
+                elif win.get('type') == 'buffer':
+                    pass ###
 
         inputs = update.get('input')
         if inputs is not None:
