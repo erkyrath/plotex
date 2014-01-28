@@ -94,6 +94,8 @@ class Command:
                     pass
             if self.cmd is None:
                 raise Exception('Unable to interpret char "%s"' % (cmd,))
+        elif self.type == 'include':
+            self.cmd = cmd
         else:
             raise Exception('Unknown command type: %s' % (type,))
         self.checks = []
@@ -471,6 +473,24 @@ def parse_tests(filename):
     fl.close()
 
 
+def list_commands(ls, res=None, nested=()):
+    """Given a list of commands, replace any {include} commands with the
+    commands in the named subtests. This works recursively.
+    """
+    if res is None:
+        res = []
+    for cmd in ls:
+        if cmd.type == 'include':
+            if cmd.cmd in nested:
+                raise Exception('Included test includes itself: %s' % (cmd.cmd,))
+            test = testmap.get(cmd.cmd)
+            if not test:
+                raise Exception('Included test not found: %s' % (cmd.cmd,))
+            list_commands(test.cmds, res, nested+(cmd.cmd,))
+            continue
+        res.append(cmd)
+    return res
+
 def run(test):
     """Run a single RegTest.
     """
@@ -493,6 +513,9 @@ def run(test):
     else:
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
 
+
+    cmdlist = list_commands(precommands + test.cmds)
+
     try:
         gamestate.initialize()
         gamestate.accept_output()
@@ -504,7 +527,7 @@ def run(test):
                     val = '*** ' if opts.verbose else ''
                     print '%s%s: %s' % (val, check, res)
     
-        for cmd in (precommands + test.cmds):
+        for cmd in cmdlist:
             if (opts.verbose):
                 if cmd.type == 'line':
                     print '> *%s*' % (cmd.cmd,)
@@ -558,8 +581,10 @@ if (opts.precommands):
     
 testcount = 0
 for test in testls:
+    use = False
     for pat in testnames:
-        use = False
+        if pat == '*' and (test.name.startswith('-') or test.name.startswith('_')):
+            continue
         if (fnmatch.fnmatch(test.name, pat)):
             use = True
             break

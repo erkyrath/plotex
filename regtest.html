@@ -236,6 +236,32 @@ These options are available:
 <dd>Display the game transcripts as they run.
 </dl>
 
+<h3>Partial Tests</h3>
+
+<p>
+Sometimes you want to wrap up a sequence of commands as a "macro", to be invoked in several different tests.
+</p>
+
+<p>
+To do this, add a command line like this:
+</p>
+
+<pre>
+&gt;{include} TESTNAME
+</pre>
+
+<p>
+You can name any other test in the file. Its commands (and checks) will be executed at this point in your test.
+</p>
+
+<p>
+(No space between the "&gt;" and the "{". Checks after an <code>&gt;{include}</code> line are meaningless; they are ignored.) 
+</p>
+
+<p>
+You typically won't want a subtest to be invoked by itself. (The player won't start in the right place, so the subtest's checks will fail.) To make this convenient, give the subtest a name beginning with "-" or "_". Such tests will not be run when you invoke RegTest in all-tests mode (or with "*").
+</p>
+
 <h3>Limitations on Cheap Mode</h3>
 
 <p>
