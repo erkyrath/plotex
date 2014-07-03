@@ -481,6 +481,8 @@ def parse_tests(filename):
                     terpargs = subls[1:]
                 elif (key == 'remformat'):
                     remformat = (val.lower() > 'og')
+                elif (key == 'checkclass'):
+                    parse_checkfile(val)
                 else:
                     raise Exception('Unknown option: ** ' + key)
             else:
