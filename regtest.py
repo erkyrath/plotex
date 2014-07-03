@@ -102,8 +102,7 @@ class Command:
     def __repr__(self):
         return '<Command "%s">' % (self.cmd,)
     def addcheck(self, ln):
-        inverse = False
-        instatus = False
+        args = {}
         # First peel off "!" and "{...}" prefixes
         while True:
             match = re.match('!|{[a-z]*}', ln)
@@ -112,16 +111,16 @@ class Command:
             ln = ln[match.end() : ].strip()
             val = match.group()
             if val == '!' or val == '{invert}':
-                inverse = True
+                args['inverse'] = True
             elif val == '{status}':
-                instatus = True
+                args['instatus'] = True
             else:
                 raise Exception('Unknown test modifier: %s' % (val,))
         # Then the test itself, which may have many formats
         if (ln.startswith('/')):
-            check = RegExpCheck(ln[1:].strip(), inverse=inverse, instatus=instatus)
+            check = RegExpCheck(ln[1:].strip(), **args)
         else:
-            check = LiteralCheck(ln, inverse=inverse, instatus=instatus)
+            check = LiteralCheck(ln, **args)
         self.checks.append(check)
 
 class Check:
@@ -138,6 +137,10 @@ class Check:
     inverse = False
     instatus = False
     
+    def __init__(self, ln, **args):
+        self.inverse = args.get('inverse', False)
+        self.instatus = args.get('instatus', False)
+        self.ln = ln
     def eval(self, state):
         if self.instatus:
             lines = state.statuswin
@@ -156,10 +159,6 @@ class Check:
 class RegExpCheck(Check):
     """A Check which looks for a regular expression match in the output.
     """
-    def __init__(self, ln, inverse=False, instatus=False):
-        self.inverse = inverse
-        self.instatus = instatus
-        self.ln = ln
     def __repr__(self):
         val = self.ln
         if len(val) > 32:
@@ -175,10 +174,6 @@ class RegExpCheck(Check):
 class LiteralCheck(Check):
     """A Check which looks for a literal string match in the output.
     """
-    def __init__(self, ln, inverse=False, instatus=False):
-        self.inverse = inverse
-        self.instatus = instatus
-        self.ln = ln
     def __repr__(self):
         val = self.ln
         if len(val) > 32:
