@@ -15,6 +15,7 @@ import select
 import fnmatch
 import subprocess
 import re
+import types
 
 gamefile = None
 terppath = None
@@ -421,6 +422,32 @@ class GameStateRemGlk(GameState):
                     self.charinputwin = input.get('id')
 
 
+checkfile_counter = 0
+
+def parse_checkfile(filename):
+    """Load a module containing extra Check subclasses. This is probably
+    a terrible abuse of the import mechanism.
+    """
+    import imp
+    global checkfile_counter
+    
+    modname = '_cc_%d' % (checkfile_counter,)
+    checkfile_counter += 1
+
+    fl = open(filename, 'U')
+    try:
+        mod = imp.load_module(modname, fl, filename, ('.py', 'U', imp.PY_SOURCE))
+        for key in dir(mod):
+            val = getattr(mod, key)
+            if type(val) is types.ClassType and issubclass(val, Check):
+                if val is Check:
+                    continue
+                if val in checkclasses:
+                    continue
+                checkclasses.insert(0, val)
+    finally:
+        fl.close()
+
 def parse_tests(filename):
     """Parse the test file. This fills out the testls array, and the
     other globals which will be used during testing.
@@ -589,11 +616,11 @@ def run(test):
     proc.poll()
     
     
+checkclasses.append(RegExpCheck)
+checkclasses.append(LiteralCheck)
 if (opts.checkfiles):
     for cc in opts.checkfiles:
         parse_checkfile(cc)
-checkclasses.append(RegExpCheck)
-checkclasses.append(LiteralCheck)
 
 parse_tests(args[0])
 
