@@ -164,6 +164,14 @@ class Check:
         self.instatus = args.get('instatus', False)
         self.vital = args.get('vital', False) or opts.vital
         self.ln = ln
+        
+    def __repr__(self):
+        val = self.ln
+        if len(val) > 32:
+            val = val[:32] + '...'
+        invflag = '!' if self.inverse else ''
+        return '<%s %s"%s">' % (self.__class__.__name__, invflag, val,)
+
     def eval(self, state):
         if self.instatus:
             lines = state.statuswin
@@ -184,14 +192,9 @@ class RegExpCheck(Check):
     """
     @classmethod
     def buildcheck(cla, ln, args):
+        # Matches check lines starting with a slash
         if (ln.startswith('/')):
             return RegExpCheck(ln[1:].strip(), **args)
-    def __repr__(self):
-        val = self.ln
-        if len(val) > 32:
-            val = val[:32] + '...'
-        invflag = '!' if self.inverse else ''
-        return '<RegExpCheck %s"%s">' % (invflag, val,)
     def subeval(self, lines):
         for ln in lines:
             if re.search(self.ln, ln):
@@ -205,12 +208,6 @@ class LiteralCheck(Check):
     def buildcheck(cla, ln, args):
         # Always matches
         return LiteralCheck(ln, **args)
-    def __repr__(self):
-        val = self.ln
-        if len(val) > 32:
-            val = val[:32] + '...'
-        invflag = '!' if self.inverse else ''
-        return '<LiteralCheck %s"%s">' % (invflag, val,)
     def subeval(self, lines):
         for ln in lines:
             if self.ln in ln:
