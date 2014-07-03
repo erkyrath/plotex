@@ -43,6 +43,9 @@ popt.add_option('-p', '--pre', '--precommand',
 popt.add_option('-r', '--rem',
                 action='store_true', dest='remformat',
                 help='the interpreter uses RemGlk (JSON) format')
+popt.add_option('--vital',
+                action='store_true', dest='vital',
+                help='abort a test on the first error')
 popt.add_option('-v', '--verbose',
                 action='store_true', dest='verbose',
                 help='display the transcripts as they run')
@@ -114,6 +117,8 @@ class Command:
                 args['inverse'] = True
             elif val == '{status}':
                 args['instatus'] = True
+            elif val == '{vital}':
+                args['vital'] = True
             else:
                 raise Exception('Unknown test modifier: %s' % (val,))
         # Then the test itself, which may have many formats
@@ -126,9 +131,13 @@ class Command:
 class Check:
     """Represents a single test (applied to the output of a game command).
 
-    This can be applied to the story window or the status window;
-    it can apply direct or inverted. (The model is simplistic and assumes
-    there is exactly one story window and at most one status window.)
+    This can be applied to the story window or the status window. (The
+    model is simplistic and assumes there is exactly one story window
+    and at most one status window.)
+
+    An "inverse" test has reversed sense.
+
+    A "vital" test will end the test run on failure.
     
     This is a virtual base class. Subclasses should customize the subeval()
     method to examine a list of lines, and return None (on success) or a
@@ -140,6 +149,7 @@ class Check:
     def __init__(self, ln, **args):
         self.inverse = args.get('inverse', False)
         self.instatus = args.get('instatus', False)
+        self.vital = args.get('vital', False) or opts.vital
         self.ln = ln
     def eval(self, state):
         if self.instatus:
@@ -486,6 +496,9 @@ def list_commands(ls, res=None, nested=()):
         res.append(cmd)
     return res
 
+class VitalCheckException(Exception):
+    pass
+
 def run(test):
     """Run a single RegTest.
     """
@@ -521,6 +534,8 @@ def run(test):
                     totalerrors += 1
                     val = '*** ' if opts.verbose else ''
                     print '%s%s: %s' % (val, check, res)
+                    if check.vital:
+                        raise VitalCheckException()
     
         for cmd in cmdlist:
             if (opts.verbose):
@@ -536,7 +551,12 @@ def run(test):
                     totalerrors += 1
                     val = '*** ' if opts.verbose else ''
                     print '%s%s: %s' % (val, check, res)
+                    if check.vital:
+                        raise VitalCheckException()
 
+    except VitalCheckException, ex:
+        # An error has already been logged; just fall out.
+        pass
     except Exception, ex:
         totalerrors += 1
         val = '*** ' if opts.verbose else ''
