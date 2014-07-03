@@ -104,6 +104,8 @@ class Command:
                 raise Exception('Unable to interpret char "%s"' % (cmd,))
         elif self.type == 'include':
             self.cmd = cmd
+        elif self.type == 'fileref_prompt':
+            self.cmd = cmd
         else:
             raise Exception('Unknown command type: %s' % (type,))
         self.checks = []
@@ -302,6 +304,7 @@ class GameStateRemGlk(GameState):
         self.windows = {}
         self.lineinputwin = None
         self.charinputwin = None
+        self.specialinput = None
         
     def perform_input(self, cmd):
         import json
@@ -320,6 +323,12 @@ class GameStateRemGlk(GameState):
             # We should handle arrow keys, too
             update = { 'type':'char', 'gen':self.generation,
                        'window':self.charinputwin, 'value':val
+                       }
+        elif cmd.type == 'fileref_prompt':
+            if self.specialinput != 'fileref_prompt':
+                raise Exception('Game is not expecting a fileref_prompt')
+            update = { 'type':'specialresponse', 'gen':self.generation,
+                       'response':'fileref_prompt', 'value':cmd.cmd
                        }
         else:
             raise Exception('Rem mode does not recognize command type: %s' % (cmd.type))
@@ -405,7 +414,11 @@ class GameStateRemGlk(GameState):
                             self.statuswin[linenum] = dat
 
         inputs = update.get('input')
-        if inputs is not None:
+        specialinputs = update.get('specialinput')
+        if specialinputs is not None:
+            self.specialinput = specialinputs.get('type')
+        elif inputs is not None:
+            self.specialinput = None
             self.lineinputwin = None
             self.charinputwin = None
             for input in inputs:
@@ -508,7 +521,7 @@ def parse_tests(filename):
 
         if (ln.startswith('>')):
             # Peel off the "{...}" prefix, if found.
-            match = re.match('>{([a-z]*)}', ln)
+            match = re.match('>{([a-z_]*)}', ln)
             if not match:
                 cmdtype = 'line'
                 ln = ln[1:].strip()
