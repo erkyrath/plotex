@@ -120,6 +120,10 @@ A line beginning with <code>"** precommand:"</code> is an extra command that wil
 </p>
 
 <p>
+A line beginning with <code>"** checkclass:"</code> specifies a (Python) file containing extra check classes. I won't get into the details here, but see <a href="extracc.py">this sample file</a>.
+</p>
+
+<p>
 The rest of the test file is a set of <em>tests</em>. Each test is a separate run through the game. A test contains a sequence of <em>commands</em>. A command can contain various <em>checks</em>, validating the output of that command.
 </p>
 
@@ -234,8 +238,12 @@ These options are available:
 <dd>Do not run the tests; just list them.
 <dt>-p, --precommand:
 <dd>Specify a precommand, which will be run before every test. You can give several precommands. (These add to the <code>**precommand:</code> lines in the test script.)
+<dt>-c, --cc:
+<dd>Specify a file of custom check classes. (Adds to the <code>**checkclass:</code> lines in the test script.)
 <dt>-r, --rem:
 <dd>The interpreter uses RemGlk (JSON) format.
+<dt>--vital:
+<dd>Abort any test run at the first error.
 <dt>-v, --verbose:
 <dd>Display the game transcripts as they run.
 </dl>
