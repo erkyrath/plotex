@@ -22,6 +22,7 @@ terpargs = []
 remformat = False
 precommands = []
 
+checkclasses = []
 testmap = {}
 testls = []
 totalerrors = 0
@@ -40,6 +41,9 @@ popt.add_option('-l', '--list',
 popt.add_option('-p', '--pre', '--precommand',
                 action='append', dest='precommands',
                 help='extra command to execute before (each) test')
+popt.add_option('-c', '--cc', '--checkclass',
+                action='append', dest='checkfiles', metavar='FILE',
+                help='module containing custom Check classes')
 popt.add_option('-r', '--rem',
                 action='store_true', dest='remformat',
                 help='the interpreter uses RemGlk (JSON) format')
@@ -121,12 +125,16 @@ class Command:
                 args['vital'] = True
             else:
                 raise Exception('Unknown test modifier: %s' % (val,))
-        # Then the test itself, which may have many formats
-        if (ln.startswith('/')):
-            check = RegExpCheck(ln[1:].strip(), **args)
+        # Then the test itself, which may have many formats. We try
+        # each of the classes in the checkclasses array until one
+        # returns a Check.
+        for cla in checkclasses:
+            check = cla.buildcheck(ln, args)
+            if check is not None:
+                self.checks.append(check)
+                break
         else:
-            check = LiteralCheck(ln, **args)
-        self.checks.append(check)
+            raise Exception('Unrecognized test: %s' % (ln,))
 
 class Check:
     """Represents a single test (applied to the output of a game command).
@@ -145,6 +153,10 @@ class Check:
     """
     inverse = False
     instatus = False
+
+    @classmethod
+    def buildcheck(cla, ln, args):
+        raise Exception('No buildcheck method defined for class: %s' % (cla.__name__,))
     
     def __init__(self, ln, **args):
         self.inverse = args.get('inverse', False)
@@ -169,6 +181,10 @@ class Check:
 class RegExpCheck(Check):
     """A Check which looks for a regular expression match in the output.
     """
+    @classmethod
+    def buildcheck(cla, ln, args):
+        if (ln.startswith('/')):
+            return RegExpCheck(ln[1:].strip(), **args)
     def __repr__(self):
         val = self.ln
         if len(val) > 32:
@@ -184,6 +200,10 @@ class RegExpCheck(Check):
 class LiteralCheck(Check):
     """A Check which looks for a literal string match in the output.
     """
+    @classmethod
+    def buildcheck(cla, ln, args):
+        # Always matches
+        return LiteralCheck(ln, **args)
     def __repr__(self):
         val = self.ln
         if len(val) > 32:
@@ -569,6 +589,12 @@ def run(test):
     proc.poll()
     
     
+if (opts.checkfiles):
+    for cc in opts.checkfiles:
+        parse_checkfile(cc)
+checkclasses.append(RegExpCheck)
+checkclasses.append(LiteralCheck)
+
 parse_tests(args[0])
 
 if (len(args) <= 1):
@@ -593,7 +619,7 @@ if (opts.remformat):
 if (opts.precommands):
     for cmd in opts.precommands:
         precommands.append(Command(cmd))
-    
+
 testcount = 0
 for test in testls:
     use = False
