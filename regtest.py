@@ -417,6 +417,8 @@ class GameStateRemGlk(GameState):
         specialinputs = update.get('specialinput')
         if specialinputs is not None:
             self.specialinput = specialinputs.get('type')
+            self.lineinputwin = None
+            self.charinputwin = None
         elif inputs is not None:
             self.specialinput = None
             self.lineinputwin = None
