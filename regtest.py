@@ -601,9 +601,13 @@ def run(test):
         for cmd in cmdlist:
             if (opts.verbose):
                 if cmd.type == 'line':
-                    print '> *%s*' % (cmd.cmd,)
+                    if (not remformat):
+                        print '> %s' % (cmd.cmd,)
+                    else:
+                        # The input line is echoed by the game.
+                        print '>',
                 else:
-                    print '> {%s} *%s*' % (cmd.type, repr(cmd.cmd),)
+                    print '> {%s} %s' % (cmd.type, repr(cmd.cmd),)
             gamestate.perform_input(cmd)
             gamestate.accept_output()
             for check in cmd.checks:
