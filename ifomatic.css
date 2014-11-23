@@ -1,0 +1,45 @@
+body {
+  font-family: "Georgia", serif;
+  font-size: 12pt;
+  line-height: 1.25em;
+}
+.StatusWindow {
+  background: #EDC;
+  font-family: monospace;
+  font-size: 11pt;
+  line-height: 1.4em;
+}
+.StatusLine {
+  margin-left: 2em;
+  margin-right: 2em;
+}
+.StoryPara {
+  margin-left: 2em;
+  margin-right: 2em;
+}
+.Style_emphasized {
+  font-style: italic;
+}
+.Style_preformatted {
+  font-family: monospace;
+  font-size: 11pt;
+  line-height: 1.25em;
+}
+.Style_header {
+  font-size: 1.2em;
+  line-height: 1.25em;
+  font-weight: bold;
+}
+.Style_subheader {
+  font-weight: bold;
+}
+.Style_alert {
+  font-style: italic;
+}
+.Style_note {
+  font-style: italic;
+}
+.Style_input {
+  font-weight: bold;
+  color: #080;
+}

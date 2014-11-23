@@ -6,9 +6,20 @@ import select
 
 popt = optparse.OptionParser()
 
+popt.add_option('--css',
+                action='store', dest='cssfile',
+                default='ifomatic.css',
+                help='CSS file to include')
+
 (opts, args) = popt.parse_args()
 
 class Command:
+    glkkeyset = set(['left', 'right', 'up', 'down',
+                     'return', 'delete', 'escape', 'tab',
+                     'pageup', 'pagedown', 'home', 'end',
+                     'func1', 'func2', 'func3', 'func4', 'func5', 'func6',
+                     'func7', 'func8', 'func9', 'func10', 'func11', 'func12'])
+    
     def __init__(self, cmd, type='line'):
         self.type = type
         if self.type == 'line':
@@ -21,6 +32,10 @@ class Command:
                 self.cmd = cmd
             elif cmd.lower().startswith('0x'):
                 self.cmd = unichr(int(cmd[2:], 16))
+            elif cmd == 'space':
+                self.cmd = ' '
+            elif cmd in Command.glkkeyset:
+                self.cmd = cmd
             else:
                 try:
                     self.cmd = unichr(int(cmd))
@@ -245,56 +260,6 @@ def escape_html(val):
         res.append(' ')
     return ''.join(res)
 
-styleblock = '''
-<style type="text/css">
-body {
-  font-family: "Georgia", serif;
-  font-size: 12pt;
-  line-height: 1.25em;
-}
-.StatusWindow {
-  background: #EDC;
-  font-family: monospace;
-  font-size: 11pt;
-  line-height: 1.4em;
-}
-.StatusLine {
-  margin-left: 2em;
-  margin-right: 2em;
-}
-.StoryPara {
-  margin-left: 2em;
-  margin-right: 2em;
-}
-.Style_emphasized {
-  font-style: italic;
-}
-.Style_preformatted {
-  font-family: monospace;
-  font-size: 11pt;
-  line-height: 1.25em;
-}
-.Style_header {
-  font-size: 1.2em;
-  line-height: 1.25em;
-  font-weight: bold;
-}
-.Style_subheader {
-  font-weight: bold;
-}
-.Style_alert {
-  font-style: italic;
-}
-.Style_note {
-  font-style: italic;
-}
-.Style_input {
-  font-weight: bold;
-  color: #080;
-}
-</style>
-'''
-
 def write_html(statuswin, storywin):
     fl = open('test.html', 'w')
 
@@ -302,7 +267,9 @@ def write_html(statuswin, storywin):
     fl.write('<html>\n')
     fl.write('<head>\n')
     fl.write('<title>Game Dump</title>\n')
+    fl.write('<style type="text/css">\n')
     fl.write(styleblock)
+    fl.write('</style>\n')
     fl.write('</head>\n')
     fl.write('<body>\n')
     fl.write('<div class="StatusWindow">\n')
@@ -330,17 +297,16 @@ def run():
     testterppath = 'glulxer'
     testterpargs = []
     testgamefile = '/Users/zarf/src/glk-dev/unittests/Advent.ulx'
-    testgamefile = '/Users/zarf/src/if/hadean/releases/rel4/HadeanLands.ulx'
+    #testgamefile = '/Users/zarf/src/if/hadean/releases/rel4/HadeanLands.ulx'
     
     args = [ testterppath ] + testterpargs + [ testgamefile ]
     proc = subprocess.Popen(args,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
-    cmdlist = [ Command('yes') ]
-    
-    gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
-    
     try:
+        cmdlist = [ Command('help'), Command('down', 'char'), Command('return', 'char'), Command('space', 'char'), Command('q', 'char') ]
+        gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
+    
         gamestate.initialize()
         gamestate.accept_output()
         for cmd in cmdlist:
@@ -356,5 +322,13 @@ def run():
     proc.stdout.close()
     proc.kill()
     proc.poll()
+
+
+styleblock = ''
+
+if opts.cssfile:
+    fl = open(opts.cssfile)
+    styleblock = fl.read()
+    fl.close()
 
 run()
