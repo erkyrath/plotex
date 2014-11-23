@@ -232,7 +232,7 @@ class GameStateRemGlk(GameState):
                         raise Exception('Multiple windows accepting char input')
                     self.charinputwin = input.get('id')
 
-def escape_html(val):
+def escape_html(val, lastspan=False):
     res = []
     spaces = 0
     for ch in val:
@@ -256,8 +256,12 @@ def escape_html(val):
             else:
                 res.append('&#'+str(och)+';')
     if spaces > 0:
-        res.append('&nbsp;' * (spaces-1))
-        res.append(' ')
+        if not lastspan:
+            res.append('&nbsp;' * (spaces-1))
+            res.append(' ')
+        else:
+            res.append(' ')
+            res.append('&nbsp;' * (spaces-1))
     return ''.join(res)
 
 def write_html(statuswin, storywin):
@@ -275,18 +279,26 @@ def write_html(statuswin, storywin):
     fl.write('<div class="StatusWindow">\n')
     for line in statuswin:
         fl.write('<div class="StatusLine">')
-        if not line:
+        spans = len(line)
+        if spans == 0:
             fl.write('&nbsp;')
-        for span in line:
-            fl.write('<span class="Style_%s">%s</span>' % (span[1], escape_html(span[0])))
+        else:
+            for ix in range(spans):
+                span = line[ix]
+                islast = (ix+1 == spans)
+                fl.write('<span class="Style_%s">%s</span>' % (span[1], escape_html(span[0], islast)))
         fl.write('</div>\n')
     fl.write('</div>\n')
     for line in storywin:
         fl.write('<div class="StoryPara">')
-        if not line:
+        spans = len(line)
+        if spans == 0:
             fl.write('&nbsp;')
-        for span in line:
-            fl.write('<span class="Style_%s">%s</span>' % (span[1], escape_html(span[0])))
+        else:
+            for ix in range(spans):
+                span = line[ix]
+                islast = (ix+1 == spans)
+                fl.write('<span class="Style_%s">%s</span>' % (span[1], escape_html(span[0])))
         fl.write('</div>\n')
     fl.write('</body>\n')
     fl.write('</html>\n')
