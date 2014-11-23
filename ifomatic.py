@@ -300,11 +300,11 @@ def run():
     #testgamefile = '/Users/zarf/src/if/hadean/releases/rel4/HadeanLands.ulx'
     
     args = [ testterppath ] + testterpargs + [ testgamefile ]
-    proc = subprocess.Popen(args,
-                            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     try:
-        cmdlist = [ Command('help'), Command('down', 'char'), Command('return', 'char'), Command('space', 'char'), Command('q', 'char') ]
+        cmdlist = [ Command('inventory') ]
+        proc = subprocess.Popen(args,
+                                stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
     
         gamestate.initialize()
