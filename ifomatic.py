@@ -450,6 +450,11 @@ def run(gamefile):
     try:
         proc = subprocess.Popen(args,
                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    except Exception, ex:
+        print '%s: unable to launch interpreter: %s: %s' % (gamefile, ex.__class__.__name__, ex)
+        return
+    
+    try:
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
     
         gamestate.initialize()
@@ -463,12 +468,11 @@ def run(gamefile):
         print '%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex)
     
     gamestate = None
-    if proc is not None:
-        proc.stdin.close()
-        proc.stdout.close()
-        proc.kill()
-        proc.poll()
-        proc = None
+    proc.stdin.close()
+    proc.stdout.close()
+    proc.kill()
+    proc.poll()
+    proc = None
     
     return ifid
 
