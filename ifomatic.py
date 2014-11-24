@@ -369,6 +369,7 @@ def write_html(ifid, gamefile, statuswin, storywin, dirpath):
 
 re_ifid = re.compile('^[A-Z0-9-]+$')
 re_ifidline = re.compile('^IFID: ([A-Z0-9-]+)$')
+re_formatline = re.compile('^Format: ([A-Za-z0-9 _-]+)$')
 
 def get_ifid(file):
     res = subprocess.check_output([opts.babel, '-ifid', file])
@@ -377,6 +378,17 @@ def get_ifid(file):
     if match:
         return match.group(1)
     raise Exception('Babel tool did not return an IFID')
+
+def get_format(file):
+    res = subprocess.check_output([opts.babel, '-format', file])
+    res = res.strip()
+    match = re_formatline.match(res)
+    if match:
+        val = match.group(1)
+        if val.startswith('blorbed '):
+            val = val[8:]
+        return val
+    raise Exception('Babel tool did not return a format')
 
 def run(gamefile):
     if re_ifid.match(gamefile):
@@ -412,17 +424,30 @@ def run(gamefile):
         print '%s: unable to get IFID: %s: %s' % (gamefile, ex.__class__.__name__, ex)
         return
 
+    try:
+        format = get_format(gamefile)
+    except Exception, ex:
+        print '%s: unable to get format: %s: %s' % (gamefile, ex.__class__.__name__, ex)
+        return
+    if format not in ['zcode', 'glulx']:
+        print '%s: format is not zcode/glulx: %s' % (gamefile, format)
+        return
+
     dir = os.path.join(opts.shotdir, ifid)
     if not os.path.exists(dir):
         os.mkdir(dir)
-        
-    testterppath = 'glulxer'
+
+    if format == 'zcode':
+        terppath = opts.zterp
+    else:
+        terppath = opts.gterp
     testterpargs = []
+    cmdlist = []
     
-    args = [ testterppath ] + testterpargs + [ gamefile ]
+    args = [ terppath ] + testterpargs + [ gamefile ]
+    proc = None
 
     try:
-        cmdlist = [ Command('inventory') ]
         proc = subprocess.Popen(args,
                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
@@ -438,10 +463,12 @@ def run(gamefile):
         print '%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex)
     
     gamestate = None
-    proc.stdin.close()
-    proc.stdout.close()
-    proc.kill()
-    proc.poll()
+    if proc is not None:
+        proc.stdin.close()
+        proc.stdout.close()
+        proc.kill()
+        proc.poll()
+        proc = None
     
     return ifid
 
