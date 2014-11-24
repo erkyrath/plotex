@@ -229,6 +229,20 @@ class GameStateRemGlk(GameState):
                         raise Exception('Multiple windows accepting char input')
                     self.charinputwin = input.get('id')
 
+def escape_json(val):
+    res = ['"']
+    for ch in val:
+        if ch == '"' or ch == '\\':
+            res.append('\\' + ch)
+        else:
+            och = ord(ch)
+            if och < 128:
+                res.append(chr(och))
+            else:
+                res.append('\u%04x' % (och,))
+    res.append('"')
+    return ''.join(res)
+
 def escape_html(val, lastspan=False):
     res = []
     spaces = 0
@@ -262,6 +276,29 @@ def escape_html(val, lastspan=False):
     return ''.join(res)
 
 def write_html(statuswin, storywin):
+    fl = open('test.json', 'w')
+    fl.write('{\n')
+    fl.write(' "status": {\n')
+    fl.write('  "lines": [\n')
+    for ix in range(len(statuswin)):
+        line = statuswin[ix]
+        line = [ '{"text": %s, "style": %s}' % (escape_json(span.get('text', '')), escape_json(span.get('style', 'normal'))) for span in line ]
+        line = '[' + ', '.join(line) + ']'
+        comma = '' if (ix+1 == len(statuswin)) else ','
+        fl.write('   { "line": %d, "content": %s }%s\n' % (ix, line, comma))
+    fl.write('  ] },\n')
+    fl.write(' "story": {\n')
+    fl.write('  "text": [\n')
+    for ix in range(len(storywin)):
+        line = storywin[ix]
+        line = [ '{"text": %s, "style": %s}' % (escape_json(span.get('text', '')), escape_json(span.get('style', 'normal'))) for span in line ]
+        line = '[' + ', '.join(line) + ']'
+        comma = '' if (ix+1 == len(storywin)) else ','
+        fl.write('   { "content": %s }%s\n' % (line, comma))
+    fl.write('  ] }\n')
+    fl.write('}\n')
+    fl.close()
+    
     fl = open('test.html', 'w')
 
     fl.write('<!doctype HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">\n')
