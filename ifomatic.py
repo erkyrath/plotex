@@ -3,6 +3,7 @@ import os
 import optparse
 import subprocess
 import select
+import re
 
 popt = optparse.OptionParser()
 
@@ -10,6 +11,18 @@ popt.add_option('--css',
                 action='store', dest='cssfile',
                 default='ifomatic.css',
                 help='CSS file to include')
+popt.add_option('--zterp',
+                action='store', dest='zterp',
+                default='fizmo-rem',
+                help='RemGlk Z-code interpreter')
+popt.add_option('--gterp',
+                action='store', dest='gterp',
+                default='glulxer',
+                help='RemGlk Glulx interpreter')
+popt.add_option('--babel',
+                action='store', dest='babel',
+                default='babel',
+                help='Babel tool')
 
 (opts, args) = popt.parse_args()
 
@@ -342,14 +355,28 @@ def write_html(statuswin, storywin):
     fl.write('</html>\n')
 
     fl.close()
-    
-def run():
+
+def get_ifid(file):
+    res = subprocess.check_output([opts.babel, '-ifid', file])
+    res = res.strip()
+    match = re.match('^IFID: ([A-Z0-9-]+)$', res)
+    if match:
+        return match.group(1)
+    raise Exception('Babel tool did not return an IFID')
+
+def run(gamefile):
+    try:
+        ifid = get_ifid(gamefile)
+    except Exception, ex:
+        print '%s: unable to get IFID: %s: %s' % (gamefile, ex.__class__.__name__, ex)
+        return
+
+    print '%s: IFID %s' % (gamefile, ifid)
+        
     testterppath = 'glulxer'
     testterpargs = []
-    testgamefile = '/Users/zarf/src/glk-dev/unittests/Advent.ulx'
-    #testgamefile = '/Users/zarf/src/if/hadean/releases/rel4/HadeanLands.ulx'
     
-    args = [ testterppath ] + testterpargs + [ testgamefile ]
+    args = [ testterppath ] + testterpargs + [ gamefile ]
 
     try:
         cmdlist = [ Command('inventory') ]
@@ -363,9 +390,9 @@ def run():
             gamestate.perform_input(cmd)
             gamestate.accept_output()
         write_html(gamestate.statuswin, gamestate.storywin)
-        print '%s: wrote file.' % (testgamefile,)
+        print '%s: wrote file.' % (gamefile,)
     except Exception, ex:
-        print '%s: unable to run: %s: %s' % (testgamefile, ex.__class__.__name__, ex)
+        print '%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex)
     
     gamestate = None
     proc.stdin.close()
@@ -374,6 +401,10 @@ def run():
     proc.poll()
 
 
+if not args:
+    print 'usage: ifomatic.py [options] files ...'
+    sys.exit(-1)
+
 styleblock = ''
 
 if opts.cssfile:
@@ -381,4 +412,5 @@ if opts.cssfile:
     styleblock = fl.read()
     fl.close()
 
-run()
+for arg in args:
+    run(arg)
