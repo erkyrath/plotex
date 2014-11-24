@@ -296,7 +296,7 @@ def escape_html(val, lastspan=False):
 def write_html(ifid, gamefile, statuswin, storywin, dirpath):
     fl = open(os.path.join(dirpath, 'contents'), 'w')
     fl.write('IFID: %s\n' % (ifid,))
-    fl.write('file: %s\n' % (gamefile,))
+    fl.write('file: %s\n' % (os.path.abspath(gamefile),))
     fl.write('created: %s\n' % (datetime.datetime.now(),))
     fl.close()
     
@@ -381,7 +381,26 @@ def get_ifid(file):
 def run(gamefile):
     if re_ifid.match(gamefile):
         # This is an IFID, not a filename.
-        raise Exception('###')
+        ifid = gamefile
+        dir = os.path.join(opts.shotdir, ifid)
+        if not os.path.exists(dir):
+            print '%s: no IFID directory (%s)' % (ifid, dir)
+            return
+        try:
+            gamefile = None
+            fl = open(os.path.join(dir, 'contents'))
+            for ln in fl.readlines():
+                tag, dummy, body = ln.partition(':')
+                tag, body = tag.strip(), body.strip()
+                if tag == 'file':
+                    gamefile = body
+            fl.close()
+            if not gamefile:
+                print '%s: no file listed in contents file in %s' % (ifid, dir)
+                return
+        except IOError:
+            print '%s: cannot read contents file in %s' % (ifid, dir)
+            return
 
     if not os.path.exists(gamefile):
         print '%s: no such file' % (gamefile,)
