@@ -6,7 +6,7 @@ import select
 import re
 import datetime
 
-popt = optparse.OptionParser()
+popt = optparse.OptionParser(usage='ifomatic.py [options] files or ifids ...')
 
 popt.add_option('--dir',
                 action='store', dest='shotdir',
@@ -446,7 +446,7 @@ def run(gamefile):
     return ifid
 
 if not args:
-    print 'usage: ifomatic.py [options] files ...'
+    print 'usage: ifomatic.py [options] files or ifids ...'
     sys.exit(-1)
 
 styleblock = ''
