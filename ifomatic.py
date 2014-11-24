@@ -4,6 +4,7 @@ import optparse
 import subprocess
 import select
 import re
+import datetime
 
 popt = optparse.OptionParser()
 
@@ -292,8 +293,14 @@ def escape_html(val, lastspan=False):
             res.append('&nbsp;' * (spaces-1))
     return ''.join(res)
 
-def write_html(statuswin, storywin):
-    fl = open('test.json', 'w')
+def write_html(ifid, gamefile, statuswin, storywin, dirpath):
+    fl = open(os.path.join(dirpath, 'contents'), 'w')
+    fl.write('IFID: %s\n' % (ifid,))
+    fl.write('file: %s\n' % (gamefile,))
+    fl.write('created: %s\n' % (datetime.datetime.now(),))
+    fl.close()
+    
+    fl = open(os.path.join(dirpath, 'screen.json'), 'w')
     fl.write('{\n')
     fl.write(' "status": {\n')
     fl.write('  "lines": [\n')
@@ -316,7 +323,7 @@ def write_html(statuswin, storywin):
     fl.write('}\n')
     fl.close()
     
-    fl = open('test.html', 'w')
+    fl = open(os.path.join(dirpath, 'screen.html'), 'w')
 
     fl.write('<!doctype HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">\n')
     fl.write('<html>\n')
@@ -360,20 +367,35 @@ def write_html(statuswin, storywin):
 
     fl.close()
 
+re_ifid = re.compile('^[A-Z0-9-]+$')
+re_ifidline = re.compile('^IFID: ([A-Z0-9-]+)$')
+
 def get_ifid(file):
     res = subprocess.check_output([opts.babel, '-ifid', file])
     res = res.strip()
-    match = re.match('^IFID: ([A-Z0-9-]+)$', res)
+    match = re_ifidline.match(res)
     if match:
         return match.group(1)
     raise Exception('Babel tool did not return an IFID')
 
 def run(gamefile):
+    if re_ifid.match(gamefile):
+        # This is an IFID, not a filename.
+        raise Exception('###')
+
+    if not os.path.exists(gamefile):
+        print '%s: no such file' % (gamefile,)
+        return
+    
     try:
         ifid = get_ifid(gamefile)
     except Exception, ex:
         print '%s: unable to get IFID: %s: %s' % (gamefile, ex.__class__.__name__, ex)
         return
+
+    dir = os.path.join(opts.shotdir, ifid)
+    if not os.path.exists(dir):
+        os.mkdir(dir)
         
     testterppath = 'glulxer'
     testterpargs = []
@@ -391,7 +413,7 @@ def run(gamefile):
         for cmd in cmdlist:
             gamestate.perform_input(cmd)
             gamestate.accept_output()
-        write_html(gamestate.statuswin, gamestate.storywin)
+        write_html(ifid, gamefile, gamestate.statuswin, gamestate.storywin, dirpath=dir)
         print '%s: (IFID %s): done' % (gamefile, ifid)
     except Exception, ex:
         print '%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex)
@@ -401,7 +423,8 @@ def run(gamefile):
     proc.stdout.close()
     proc.kill()
     proc.poll()
-
+    
+    return ifid
 
 if not args:
     print 'usage: ifomatic.py [options] files ...'
