@@ -419,18 +419,18 @@ def run(gamefile):
         return
     
     try:
-        ifid = get_ifid(gamefile)
-    except Exception, ex:
-        print '%s: unable to get IFID: %s: %s' % (gamefile, ex.__class__.__name__, ex)
-        return
-
-    try:
         format = get_format(gamefile)
     except Exception, ex:
         print '%s: unable to get format: %s: %s' % (gamefile, ex.__class__.__name__, ex)
         return
     if format not in ['zcode', 'glulx']:
         print '%s: format is not zcode/glulx: %s' % (gamefile, format)
+        return
+
+    try:
+        ifid = get_ifid(gamefile)
+    except Exception, ex:
+        print '%s: unable to get IFID: %s: %s' % (gamefile, ex.__class__.__name__, ex)
         return
 
     dir = os.path.join(opts.shotdir, ifid)
