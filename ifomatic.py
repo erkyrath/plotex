@@ -1,5 +1,5 @@
 import sys
-import os
+import os, os.path
 import optparse
 import subprocess
 import select
@@ -7,6 +7,10 @@ import re
 
 popt = optparse.OptionParser()
 
+popt.add_option('--dir',
+                action='store', dest='shotdir',
+                default='screenshots',
+                help='directory to write screenshots to')
 popt.add_option('--css',
                 action='store', dest='cssfile',
                 default='ifomatic.css',
@@ -370,8 +374,6 @@ def run(gamefile):
     except Exception, ex:
         print '%s: unable to get IFID: %s: %s' % (gamefile, ex.__class__.__name__, ex)
         return
-
-    print '%s: IFID %s' % (gamefile, ifid)
         
     testterppath = 'glulxer'
     testterpargs = []
@@ -390,7 +392,7 @@ def run(gamefile):
             gamestate.perform_input(cmd)
             gamestate.accept_output()
         write_html(gamestate.statuswin, gamestate.storywin)
-        print '%s: wrote file.' % (gamefile,)
+        print '%s: (IFID %s): done' % (gamefile, ifid)
     except Exception, ex:
         print '%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex)
     
@@ -406,7 +408,6 @@ if not args:
     sys.exit(-1)
 
 styleblock = ''
-
 if opts.cssfile:
     fl = open(opts.cssfile)
     styleblock = fl.read()
