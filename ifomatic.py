@@ -443,6 +443,27 @@ def run(gamefile):
         terppath = opts.gterp
     testterpargs = []
     cmdlist = []
+
+    optfile = os.path.join(dir, 'options')
+    if os.path.exists(optfile):
+        fl = open(optfile)
+        for ln in fl.readlines():
+            ln = ln.strip()
+            if not ln:
+                continue
+            if ln.startswith('#'):
+                continue
+            tag, dummy, body = ln.partition(':')
+            tag, body = tag.strip(), body.strip()
+            if tag == 'input':
+                if body.startswith('%char'):
+                    cmd = Command(body[5:].strip(), type='char')
+                else:
+                    cmd = Command(body)
+                cmdlist.append(cmd)
+            else:
+                print '%s: warning: unrecognized line in options: %s' % (gamefile, ln)
+        fl.close()
     
     args = [ terppath ] + testterpargs + [ gamefile ]
     proc = None
