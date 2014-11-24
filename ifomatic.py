@@ -88,13 +88,6 @@ class GameStateRemGlk(GameState):
     a given turn is agglomerated.
     """
 
-    @staticmethod
-    def extract_text(line):
-        con = line.get('content')
-        if not con:
-            return []
-        return [ (run.get('text', ''), run.get('style', 'normal')) for run in con ]
-    
     def initialize(self):
         import json
         update = { 'type':'init', 'gen':0,
@@ -199,7 +192,9 @@ class GameStateRemGlk(GameState):
                     text = content.get('text')
                     if text:
                         for line in text:
-                            datls = self.extract_text(line)
+                            datls = line.get('content')
+                            if not datls:
+                                datls = []
                             if line.get('append') and len(self.storywin):
                                 self.storywin[-1] += datls
                             else:
@@ -208,7 +203,9 @@ class GameStateRemGlk(GameState):
                     lines = content.get('lines')
                     for line in lines:
                         linenum = line.get('line')
-                        datls = self.extract_text(line)
+                        datls = line.get('content')
+                        if not datls:
+                            datls = []
                         if linenum >= 0 and linenum < len(self.statuswin):
                             self.statuswin[linenum] = datls
 
@@ -285,8 +282,10 @@ def write_html(statuswin, storywin):
         else:
             for ix in range(spans):
                 span = line[ix]
+                spantext = span.get('text', '')
+                spanstyle = span.get('style', 'normal')
                 islast = (ix+1 == spans)
-                fl.write('<span class="Style_%s">%s</span>' % (span[1], escape_html(span[0], islast)))
+                fl.write('<span class="Style_%s">%s</span>' % (spanstyle, escape_html(spantext, islast)))
         fl.write('</div>\n')
     fl.write('</div>\n')
     for line in storywin:
@@ -297,8 +296,10 @@ def write_html(statuswin, storywin):
         else:
             for ix in range(spans):
                 span = line[ix]
+                spantext = span.get('text', '')
+                spanstyle = span.get('style', 'normal')
                 islast = (ix+1 == spans)
-                fl.write('<span class="Style_%s">%s</span>' % (span[1], escape_html(span[0])))
+                fl.write('<span class="Style_%s">%s</span>' % (spanstyle, escape_html(spantext)))
         fl.write('</div>\n')
     fl.write('</body>\n')
     fl.write('</html>\n')
