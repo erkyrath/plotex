@@ -21,6 +21,7 @@ import sys
 import os
 import optparse
 import select
+import time
 import fnmatch
 import subprocess
 import re
@@ -57,6 +58,9 @@ popt.add_option('-c', '--cc', '--checkclass',
 popt.add_option('-r', '--rem',
                 action='store_true', dest='remformat',
                 help='the interpreter uses RemGlk (JSON) format')
+popt.add_option('-t', '--timeout',
+                dest='timeout_secs', type=float, default=1.0,
+                help='timeout interval (default: 1.0 sec)')
 popt.add_option('--vital',
                 action='store_true', dest='vital',
                 help='abort a test on the first error')
@@ -297,13 +301,20 @@ class GameStateCheap(GameState):
     def accept_output(self):
         self.storywin = []
         output = bytearray()
-        while (select.select([self.outfile],[],[])[0] != []):
+        
+        timeout_time = time.time() + opts.timeout_secs
+
+        while (select.select([self.outfile],[],[],opts.timeout_secs)[0] != []):
             ch = self.outfile.read(1)
             if ch == b'':
                 break
             output += ch
             if (output[-2:] == b'\n>'):
                 break
+            
+        if time.time() >= timeout_time:
+            raise Exception('Timed out awaiting output')
+            
         dat = output.decode()
         res = dat.split('\n')
         if (opts.verbose):
@@ -379,10 +390,13 @@ class GameStateRemGlk(GameState):
         output = bytearray()
         update = None
 
-        # Read until a complete JSON object comes through the pipe.
+        timeout_time = time.time() + opts.timeout_secs
+
+        # Read until a complete JSON object comes through the pipe (or
+        # we time out).
         # We sneakily rely on the fact that RemGlk always uses dicts
         # as the JSON object, so it always ends with "}".
-        while (select.select([self.outfile],[],[])[0] != []):
+        while (select.select([self.outfile],[],[],opts.timeout_secs)[0] != []):
             ch = self.outfile.read(1)
             if ch == b'':
                 # End of stream. Hopefully we have a valid object.
@@ -398,6 +412,9 @@ class GameStateRemGlk(GameState):
                     break
                 except:
                     pass
+                
+        if time.time() >= timeout_time:
+            raise Exception('Timed out awaiting output')
 
         # Parse the update object. This is complicated. For the format,
         # see http://eblong.com/zarf/glk/glkote/docs.html
