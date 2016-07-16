@@ -8,6 +8,8 @@
 # (This software is not connected to PlotEx; I'm just distributing them
 # from the same folder.)
 
+from __future__ import print_function
+
 import sys
 import os
 import optparse
@@ -58,7 +60,7 @@ popt.add_option('-v', '--verbose',
 (opts, args) = popt.parse_args()
 
 if (not args):
-    print 'usage: regtest.py TESTFILE [ TESTPATS... ]'
+    print('usage: regtest.py TESTFILE [ TESTPATS... ]')
     sys.exit(1)
 
 class RegTest:
@@ -272,7 +274,7 @@ class GameStateCheap(GameState):
             for ln in res:
                 if (ln == '>'):
                     continue
-                print ln
+                print(ln)
         self.storywin = res
     
 class GameStateRemGlk(GameState):
@@ -400,7 +402,7 @@ class GameStateRemGlk(GameState):
                             dat = self.extract_text(line)
                             if (opts.verbose):
                                 if (dat != '>'):
-                                    print dat
+                                    print(dat)
                             if line.get('append') and len(self.storywin):
                                 self.storywin[-1] += dat
                             else:
@@ -572,7 +574,7 @@ def run(test):
     if (test.terp):
         testterppath, testterpargs = test.terp
     
-    print '*', test.name
+    print('* ' + test.name)
     args = [ testterppath ] + testterpargs + [ testgamefile ]
     proc = subprocess.Popen(args,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -594,7 +596,7 @@ def run(test):
                 if (res):
                     totalerrors += 1
                     val = '*** ' if opts.verbose else ''
-                    print '%s%s: %s' % (val, check, res)
+                    print('%s%s: %s' % (val, check, res))
                     if check.vital:
                         raise VitalCheckException()
     
@@ -602,12 +604,12 @@ def run(test):
             if (opts.verbose):
                 if cmd.type == 'line':
                     if (not remformat):
-                        print '> %s' % (cmd.cmd,)
+                        print('> %s' % (cmd.cmd,))
                     else:
                         # The input line is echoed by the game.
-                        print '>',
+                        print('>', end='')
                 else:
-                    print '> {%s} %s' % (cmd.type, repr(cmd.cmd),)
+                    print('> {%s} %s' % (cmd.type, repr(cmd.cmd),))
             gamestate.perform_input(cmd)
             gamestate.accept_output()
             for check in cmd.checks:
@@ -615,7 +617,7 @@ def run(test):
                 if (res):
                     totalerrors += 1
                     val = '*** ' if opts.verbose else ''
-                    print '%s%s: %s' % (val, check, res)
+                    print('%s%s: %s' % (val, check, res))
                     if check.vital:
                         raise VitalCheckException()
 
@@ -625,7 +627,7 @@ def run(test):
     except Exception, ex:
         totalerrors += 1
         val = '*** ' if opts.verbose else ''
-        print '%s%s: %s' % (val, ex.__class__.__name__, ex)
+        print('%s%s: %s' % (val, ex.__class__.__name__, ex))
 
     gamestate = None
     proc.stdin.close()
@@ -650,13 +652,13 @@ else:
 if (opts.gamefile):
     gamefile = opts.gamefile
 if (not gamefile):
-    print 'No game file specified'
+    print('No game file specified')
     sys.exit(-1)
 
 if (opts.terppath):
     terppath = opts.terppath
 if (not terppath):
-    print 'No interpreter path specified'
+    print('No interpreter path specified')
     sys.exit(-1)
 if (opts.remformat):
     remformat = True
@@ -677,12 +679,12 @@ for test in testls:
     if (use):
         testcount += 1
         if (opts.listonly):
-            print test.name
+            print(test.name)
         else:
             run(test)
 
 if (not testcount):
-    print 'No tests performed!'
+    print('No tests performed!')
 if (totalerrors):
-    print
-    print 'FAILED: %d errors' % (totalerrors,)
+    print()
+    print('FAILED: %d errors' % (totalerrors,))
