@@ -621,10 +621,10 @@ def run(test):
                     if check.vital:
                         raise VitalCheckException()
 
-    except VitalCheckException, ex:
+    except VitalCheckException as ex:
         # An error has already been logged; just fall out.
         pass
-    except Exception, ex:
+    except Exception as ex:
         totalerrors += 1
         val = '*** ' if opts.verbose else ''
         print('%s%s: %s' % (val, ex.__class__.__name__, ex))
