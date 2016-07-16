@@ -307,7 +307,7 @@ class GameStateRemGlk(GameState):
                    'metrics': { 'width':80, 'height':40 },
                    }
         cmd = json.dumps(update)
-        self.infile.write(cmd+'\n')
+        self.infile.write((cmd+'\n').encode())
         self.infile.flush()
         self.generation = 0
         self.windows = {}
@@ -342,12 +342,12 @@ class GameStateRemGlk(GameState):
         else:
             raise Exception('Rem mode does not recognize command type: %s' % (cmd.type))
         cmd = json.dumps(update)
-        self.infile.write(cmd+'\n')
+        self.infile.write((cmd+'\n').encode())
         self.infile.flush()
         
     def accept_output(self):
         import json
-        output = []
+        output = bytearray()
         update = None
 
         # Read until a complete JSON object comes through the pipe.
@@ -355,15 +355,15 @@ class GameStateRemGlk(GameState):
         # as the JSON object, so it always ends with "}".
         while (select.select([self.outfile],[],[])[0] != []):
             ch = self.outfile.read(1)
-            if ch == '':
+            if ch == b'':
                 # End of stream. Hopefully we have a valid object.
-                dat = ''.join(output)
+                dat = output.decode()
                 update = json.loads(dat)
                 break
-            output.append(ch)
-            if (output[-1] == '}'):
+            output += ch
+            if (output[-1] == ord('}')):
                 # Test and see if we have a valid object.
-                dat = ''.join(output)
+                dat = output.decode()
                 try:
                     update = json.loads(dat)
                     break
