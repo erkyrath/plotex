@@ -11,7 +11,8 @@
 # We use the print() function for Python 2/3 compatibility
 from __future__ import print_function
 
-# Define a unichr() function in Python 3, which doesn't need it.
+# We use the Py2 unichr() function. In Py3 there is no such function,
+# but we define a back-polyfill. (I'm lazy.)
 try:
     unichr(32)
 except NameError:
