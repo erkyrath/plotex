@@ -152,6 +152,10 @@ A check line starting with <code>"!"</code> is negated: RegTest verifies that <e
 </p>
 
 <p>
+If the check line starts with <code>"{count=N}"</code> (where N is a number), then RegTest verifies that the text occurs <em>at least N times</em> in the output.
+</p>
+
+<p>
 If the check line starts with <code>"{vital}"</code>, then if that check fails, the test run ends. You can also use the <code>--vital</code> command-line option to indicate that every check is vital (that is, abort each run on the first error).
 </p>
 
