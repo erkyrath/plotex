@@ -8,7 +8,14 @@
 # (This software is not connected to PlotEx; I'm just distributing them
 # from the same folder.)
 
+# We use the print() function for Python 2/3 compatibility
 from __future__ import print_function
+
+# Define a unichr() function in Python 3, which doesn't need it.
+try:
+    unichr(32)
+except NameError:
+    unichr = chr
 
 import sys
 import os
@@ -255,20 +262,20 @@ class GameStateCheap(GameState):
     def perform_input(self, cmd):
         if cmd.type != 'line':
             raise Exception('Cheap mode only supports line input')
-        self.infile.write(cmd.cmd+'\n')
+        self.infile.write((cmd.cmd+'\n').encode())
         self.infile.flush()
 
     def accept_output(self):
         self.storywin = []
-        output = []
+        output = bytearray()
         while (select.select([self.outfile],[],[])[0] != []):
             ch = self.outfile.read(1)
-            if ch == '':
+            if ch == b'':
                 break
-            output.append(ch)
-            if (output[-2:] == ['\n', '>']):
+            output += ch
+            if (output[-2:] == b'\n>'):
                 break
-        dat = ''.join(output)
+        dat = output.decode()
         res = dat.split('\n')
         if (opts.verbose):
             for ln in res:
@@ -577,6 +584,7 @@ def run(test):
     print('* ' + test.name)
     args = [ testterppath ] + testterpargs + [ testgamefile ]
     proc = subprocess.Popen(args,
+                            bufsize=0,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     if (not remformat):
