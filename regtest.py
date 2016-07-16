@@ -225,6 +225,35 @@ class LiteralCheck(Check):
                 return
         return 'not found'
 
+class LiteralCountCheck(Check):
+    """A Check which looks for a literal string match in the output,
+    which must occur at least N times.
+    """
+    @classmethod
+    def buildcheck(cla, ln, args):
+        match = re.match('{count=([0-9]+)}', ln)
+        if match:
+            ln = ln[ match.end() : ].strip()
+            res = LiteralCountCheck(ln, **args)
+            res.count = int(match.group(1))
+            return res
+    def subeval(self, lines):
+        counter = 0
+        for ln in lines:
+            start = 0
+            while True:
+                pos = ln.find(self.ln, start)
+                if pos < 0:
+                    break
+                counter += 1
+                start = pos+1
+                if counter >= self.count:
+                    return
+        if counter == 0:
+            return 'not found'
+        else:
+            return 'only found %d times' % (counter,)
+
 class GameState:
     """The GameState class wraps the connection to the interpreter subprocess
     (the pipe in and out streams). It's responsible for sending commands
@@ -645,6 +674,7 @@ def run(test):
     
     
 checkclasses.append(RegExpCheck)
+checkclasses.append(LiteralCountCheck)
 checkclasses.append(LiteralCheck)
 if (opts.checkfiles):
     for cc in opts.checkfiles:
