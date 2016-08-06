@@ -1,5 +1,5 @@
 # RegTest: a really simple IF regression tester.
-#   Version 1.5
+#   Version 1.6
 #   Andrew Plotkin <erkyrath@eblong.com>
 #   This script is in the public domain.
 #
@@ -17,6 +17,14 @@ try:
     unichr(32)
 except NameError:
     unichr = chr
+
+# In Py2, we'll need a bit of extra decoding.
+py2_readline = False
+try:
+    unicode
+    py2_readline = True
+except:
+    pass
 
 import sys
 import os
@@ -316,7 +324,7 @@ class GameStateCheap(GameState):
         if time.time() >= timeout_time:
             raise Exception('Timed out awaiting output')
             
-        dat = output.decode()
+        dat = output.decode('utf-8')
         res = dat.split('\n')
         if (opts.verbose):
             for ln in res:
@@ -401,13 +409,13 @@ class GameStateRemGlk(GameState):
             ch = self.outfile.read(1)
             if ch == b'':
                 # End of stream. Hopefully we have a valid object.
-                dat = output.decode()
+                dat = output.decode('utf-8')
                 update = json.loads(dat)
                 break
             output += ch
             if (output[-1] == ord('}')):
                 # Test and see if we have a valid object.
-                dat = output.decode()
+                dat = output.decode('utf-8')
                 try:
                     update = json.loads(dat)
                     break
@@ -530,6 +538,8 @@ def parse_tests(filename):
         ln = fl.readline()
         if (not ln):
             break
+        if py2_readline:
+            ln = ln.decode('utf-8')
         ln = ln.strip()
         if (not ln or ln.startswith('#')):
             continue
