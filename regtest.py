@@ -356,6 +356,7 @@ class GameStateRemGlk(GameState):
         import json
         update = { 'type':'init', 'gen':0,
                    'metrics': { 'width':80, 'height':40 },
+                   'support': [ 'timer' ],
                    }
         cmd = json.dumps(update)
         self.infile.write((cmd+'\n').encode())
