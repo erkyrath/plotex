@@ -126,6 +126,12 @@ class Command:
                 raise Exception('Unable to interpret char "%s"' % (cmd,))
         elif self.type == 'timer':
             self.cmd = None
+        elif self.type == 'hyperlink':
+            try:
+                cmd = int(cmd)
+            except:
+                pass
+            self.cmd = cmd
         elif self.type == 'include':
             self.cmd = cmd
         elif self.type == 'fileref_prompt':
@@ -356,16 +362,19 @@ class GameStateRemGlk(GameState):
         import json
         update = { 'type':'init', 'gen':0,
                    'metrics': { 'width':80, 'height':40 },
-                   'support': [ 'timer' ],
+                   'support': [ 'timer', 'hyperlinks' ],
                    }
         cmd = json.dumps(update)
         self.infile.write((cmd+'\n').encode())
         self.infile.flush()
         self.generation = 0
         self.windows = {}
+        # This doesn't track multiple-window input the way it should,
+        # nor distinguish hyperlink input state across multiple windows.
         self.lineinputwin = None
         self.charinputwin = None
         self.specialinput = None
+        self.hyperlinkinputwin = None
         
     def perform_input(self, cmd):
         import json
@@ -384,6 +393,12 @@ class GameStateRemGlk(GameState):
             # We should handle arrow keys, too
             update = { 'type':'char', 'gen':self.generation,
                        'window':self.charinputwin, 'value':val
+                       }
+        elif cmd.type == 'hyperlink':
+            if not self.hyperlinkinputwin:
+                raise Exception('Game is not expecting hyperlink input')
+            update = { 'type':'hyperlink', 'gen':self.generation,
+                       'window':self.hyperlinkinputwin, 'value':cmd.cmd
                        }
         elif cmd.type == 'timer':
             update = { 'type':'timer', 'gen':self.generation }
@@ -497,10 +512,12 @@ class GameStateRemGlk(GameState):
             self.specialinput = specialinputs.get('type')
             self.lineinputwin = None
             self.charinputwin = None
+            self.hyperlinkinputwin = None
         elif inputs is not None:
             self.specialinput = None
             self.lineinputwin = None
             self.charinputwin = None
+            self.hyperlinkinputwin = None
             for input in inputs:
                 if input.get('type') == 'line':
                     if self.lineinputwin:
@@ -510,6 +527,8 @@ class GameStateRemGlk(GameState):
                     if self.charinputwin:
                         raise Exception('Multiple windows accepting char input')
                     self.charinputwin = input.get('id')
+                if input.get('hyperlink'):
+                    self.hyperlinkinputwin = input.get('id')
 
 
 checkfile_counter = 0
