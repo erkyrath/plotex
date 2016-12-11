@@ -395,6 +395,10 @@ class GameStateRemGlk(GameState):
                        }
         else:
             raise Exception('Rem mode does not recognize command type: %s' % (cmd.type))
+        if opts.verbose >= 2:
+            import pprint
+            pprint.pprint(update, compact=True, indent=1)
+            print()
         cmd = json.dumps(update)
         self.infile.write((cmd+'\n').encode())
         self.infile.flush()
@@ -436,6 +440,7 @@ class GameStateRemGlk(GameState):
         if opts.verbose >= 2:
             import pprint
             pprint.pprint(update, compact=True, indent=1)
+            print()
 
         self.generation = update.get('gen')
 
