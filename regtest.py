@@ -203,7 +203,13 @@ class Check:
         if len(val) > 32:
             val = val[:32] + '...'
         invflag = '!' if self.inverse else ''
-        return '<%s %s"%s">' % (self.__class__.__name__, invflag, val,)
+        if self.instatus:
+            invflag += '{status}'
+        detail = self.reprdetail()
+        return '<%s %s%s"%s">' % (self.__class__.__name__, detail, invflag, val,)
+
+    def reprdetail(self):
+        return ''
 
     def eval(self, state):
         if not self.inrawdata:
@@ -265,6 +271,8 @@ class LiteralCountCheck(Check):
             res = LiteralCountCheck(ln, **args)
             res.count = int(match.group(1))
             return res
+    def reprdetail(self):
+        return '{count=%d} ' % (self.count,)
     def subeval(self, lines):
         counter = 0
         for ln in lines:
@@ -292,6 +300,8 @@ class HyperlinkSpanCheck(Check):
             res = HyperlinkSpanCheck(ln, **args)
             res.linkvalue = int(match.group(1))
             return res
+    def reprdetail(self):
+        return '{link=%d} ' % (self.linkvalue,)
     def subeval(self, lines):
         for para in lines:
             for line in para:
