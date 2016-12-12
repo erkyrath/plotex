@@ -460,8 +460,7 @@ class GameStateRemGlk(GameState):
         else:
             raise Exception('Rem mode does not recognize command type: %s' % (cmd.type))
         if opts.verbose >= 2:
-            import pprint
-            pprint.pprint(update, compact=True, indent=1)
+            ObjPrint.pprint(update)
             print()
         cmd = json.dumps(update)
         self.infile.write((cmd+'\n').encode())
@@ -502,8 +501,7 @@ class GameStateRemGlk(GameState):
         # see http://eblong.com/zarf/glk/glkote/docs.html
 
         if opts.verbose >= 2:
-            import pprint
-            pprint.pprint(update, compact=True, indent=1)
+            ObjPrint.pprint(update)
             print()
 
         self.generation = update.get('gen')
@@ -591,6 +589,107 @@ class GameStateRemGlk(GameState):
                 if input.get('hyperlink'):
                     self.hyperlinkinputwin = input.get('id')
         
+
+class ObjPrint:
+    NoneType = type(None)
+    
+    @staticmethod
+    def pprint(obj):
+        printer = ObjPrint()
+        printer.printval(obj, depth=0)
+        print(''.join(printer.arr))
+    
+    def __init__(self):
+        self.arr = []
+
+    @staticmethod
+    def valislong(val):
+        typ = type(val)
+        if typ is ObjPrint.NoneType:
+            return False
+        elif typ is bool or typ is int or typ is float:
+            return False
+        elif typ is str:
+            return (len(val) > 16)
+        elif typ is list or typ is dict:
+            return (len(val) > 0)
+        else:
+            return True
+
+    def printval(self, val, depth=0):
+        typ = type(val)
+        
+        if typ is ObjPrint.NoneType:
+            self.arr.append('None')
+        elif typ is bool or typ is int or typ is float:
+            self.arr.append(str(val))
+        elif typ is str:
+            self.arr.append(repr(val))
+        elif typ is list:
+            if len(val) == 0:
+                self.arr.append('[]')
+            else:
+                anylong = False
+                for subval in val:
+                    if ObjPrint.valislong(subval):
+                        anylong = True
+                        break
+                self.arr.append('[')
+                if anylong:
+                    self.arr.append('\n')
+                first = True
+                for subval in val:
+                    if first:
+                        if anylong:
+                            self.arr.append((depth+1)*'  ')
+                    else:
+                        if anylong:
+                            self.arr.append(',\n')
+                            self.arr.append((depth+1)*'  ')
+                        else:
+                            self.arr.append(', ')
+                    self.printval(subval, depth+1)
+                    first = False
+                if anylong:
+                    self.arr.append('\n')
+                    self.arr.append(depth*'  ')
+                self.arr.append(']')
+        elif typ is dict:
+            if len(val) == 0:
+                self.arr.append('{}')
+            else:
+                anylong = False
+                for subval in val.values():
+                    if ObjPrint.valislong(subval):
+                        anylong = True
+                        break
+                self.arr.append('{')
+                if anylong:
+                    self.arr.append('\n')
+                first = True
+                keyls = sorted(val.keys())
+                for subkey in keyls:
+                    subval = val[subkey]
+                    if first:
+                        if anylong:
+                            self.arr.append((depth+1)*'  ')
+                    else:
+                        if anylong:
+                            self.arr.append(',\n')
+                            self.arr.append((depth+1)*'  ')
+                        else:
+                            self.arr.append(', ')
+                    self.printval(subkey, depth+1)
+                    self.arr.append(':')
+                    self.printval(subval, depth+1)
+                    first = False
+                if anylong:
+                    self.arr.append('\n')
+                    self.arr.append(depth*'  ')
+                self.arr.append('}')
+        else:
+            raise Exception('unknown type: %r' % (val,))
+
 
 checkfile_counter = 0
 
