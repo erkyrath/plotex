@@ -184,6 +184,7 @@ class Check:
     method to examine a list of lines, and return None (on success) or a
     string (explaining the failure).
     """
+    inrawdata = False
     inverse = False
     instatus = False
 
@@ -205,10 +206,16 @@ class Check:
         return '<%s %s"%s">' % (self.__class__.__name__, invflag, val,)
 
     def eval(self, state):
-        if self.instatus:
-            lines = state.statuswin
+        if not self.inrawdata:
+            if self.instatus:
+                lines = state.statuswin
+            else:
+                lines = state.storywin
         else:
-            lines = state.storywin
+            if self.instatus:
+                lines = state.statuswindat
+            else:
+                lines = state.storywindat
         res = self.subeval(lines)
         if (not self.inverse):
             return res
@@ -274,6 +281,26 @@ class LiteralCountCheck(Check):
             return 'not found'
         else:
             return 'only found %d times' % (counter,)
+
+class HyperlinkSpanCheck(Check):
+    inrawdata = True
+    @classmethod
+    def buildcheck(cla, ln, args):
+        match = re.match('{hyperlink=([0-9]+)}', ln)
+        if match:
+            ln = ln[ match.end() : ].strip()
+            res = HyperlinkSpanCheck(ln, **args)
+            res.linkvalue = int(match.group(1))
+            return res
+    def subeval(self, lines):
+        for para in lines:
+            for line in para:
+                for span in line:
+                    linkval = span.get('hyperlink')
+                    text = span.get('text', '')
+                    if linkval == self.linkvalue and self.ln in text:
+                        return
+        return 'not found'
 
 class GameState:
     """The GameState class wraps the connection to the interpreter subprocess
@@ -760,6 +787,7 @@ def run(test):
     
 checkclasses.append(RegExpCheck)
 checkclasses.append(LiteralCountCheck)
+checkclasses.append(HyperlinkSpanCheck)
 checkclasses.append(LiteralCheck)
 if (opts.checkfiles):
     for cc in opts.checkfiles:
