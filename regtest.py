@@ -588,7 +588,7 @@ class GameStateRemGlk(GameState):
                     self.charinputwin = input.get('id')
                 if input.get('hyperlink'):
                     self.hyperlinkinputwin = input.get('id')
-        
+
 
 class ObjPrint:
     NoneType = type(None)
