@@ -592,6 +592,10 @@ class GameStateRemGlk(GameState):
 
 class ObjPrint:
     NoneType = type(None)
+    try:
+        UnicodeType = unicode
+    except:
+        UnicodeType = str
     
     @staticmethod
     def pprint(obj):
@@ -609,7 +613,7 @@ class ObjPrint:
             return False
         elif typ is bool or typ is int or typ is float:
             return False
-        elif typ is str:
+        elif typ is str or typ is ObjPrint.UnicodeType:
             return (len(val) > 16)
         elif typ is list or typ is dict:
             return (len(val) > 0)
@@ -625,6 +629,11 @@ class ObjPrint:
             self.arr.append(str(val))
         elif typ is str:
             self.arr.append(repr(val))
+        elif typ is ObjPrint.UnicodeType:
+            st = repr(val)
+            if st.startswith('u'):
+                st = st[1:]
+            self.arr.append(st)
         elif typ is list:
             if len(val) == 0:
                 self.arr.append('[]')
