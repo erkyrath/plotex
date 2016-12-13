@@ -105,6 +105,17 @@ class Command:
     """Command is one cycle of a RegTest -- a game input, followed by
     tests to run on the game's output.
     """
+    glk_key_names = {
+        'left':0xfffffffe, 'right':0xfffffffd, 'up':0xfffffffc,
+        'down':0xfffffffb, 'return':0xfffffffa, 'delete':0xfffffff9,
+        'escape':0xfffffff8, 'tab':0xfffffff7, 'pageup':0xfffffff6,
+        'pagedown':0xfffffff5, 'home':0xfffffff4, 'end':0xfffffff3,
+        'func1':0xffffffef, 'func2':0xffffffee, 'func3':0xffffffed,
+        'func4':0xffffffec, 'func5':0xffffffeb, 'func6':0xffffffea,
+        'func7':0xffffffe9, 'func8':0xffffffe8, 'func9':0xffffffe7,
+        'func10':0xffffffe6, 'func11':0xffffffe5, 'func12':0xffffffe4,
+    }
+    
     def __init__(self, cmd, type='line'):
         self.type = type
         if self.type == 'line':
@@ -115,6 +126,8 @@ class Command:
                 self.cmd = '\n'
             elif len(cmd) == 1:
                 self.cmd = cmd
+            elif cmd.lower() in Command.glk_key_names:
+                self.cmd = cmd.lower()
             elif cmd.lower().startswith('0x'):
                 self.cmd = unichr(int(cmd[2:], 16))
             else:
