@@ -339,7 +339,11 @@ An input line starting with <code>&gt;{char}</code> is character (keystroke) inp
 </p>
 
 <p>
-An input line starting with <code>&gt;{timer}</code> is timer input. The rest of the line is ignored. RegTest does not really perform a delay for timer events; it just tells RemGlk that the timer has fired. (When running a game which uses timer events, you should pass the <code>-timersupport yes</code> option to RemGlk.)
+An input line starting with <code>&gt;{timer}</code> is timer input. The rest of the line is ignored. RegTest does not really perform a delay for timer events; it just tells RemGlk that the timer has fired. (When running a game which uses timer events, you should pass the <code>-support timer</code> option to RemGlk.)
+</p>
+
+<p>
+An input line starting with <code>&gt;{hyperlink}</code> is hyperlink input. The rest of the line should be a (decimal) integer containing a link value. (When running a game which uses timer events, you should pass the <code>-support hyperlinks</code> option to RemGlk.)
 </p>
 
 <p>
