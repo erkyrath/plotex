@@ -335,7 +335,7 @@ A test line starting with <code>{status}</code> tests the contents of the status
 </p>
 
 <p>
-An input line starting with <code>&gt;{char}</code> is character (keystroke) input, rather than line input. The line should contain a single character, or a (decimal) ASCII or Unicode code. <code>&gt;{char}</code> with nothing following indicates a Return keystroke. RegTest will be able to tell whether the game is expecting line or character input, and will report an error if your script offers the wrong one.
+An input line starting with <code>&gt;{char}</code> is character (keystroke) input, rather than line input. The line should contain a single character. You may also pass a standard keystroke name (<code>left</code>, <code>escape</code>, etc), or a ASCII or Unicode code as decimal (<code>123</code>) or hex (<code>0x1F0</code>). <code>&gt;{char}</code> with nothing following indicates a Return keystroke. RegTest will be able to tell whether the game is expecting line or character input, and will report an error if your script offers the wrong one.
 </p>
 
 <p>
