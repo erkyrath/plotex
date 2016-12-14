@@ -970,3 +970,4 @@ if (not testcount):
 if (totalerrors):
     print()
     print('FAILED: %d errors' % (totalerrors,))
+    sys.exit(1)
