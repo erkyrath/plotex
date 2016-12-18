@@ -363,11 +363,29 @@ class GameStateCheap(GameState):
     It can only handle line input (not character input).
     """
 
+    key_codes = {
+        'left': '\033[D', 'right': '\033[C', 'up': '\033[A',
+        'down': '\033[B', 'return': '\r', 'delete': '\033[3~',
+        'escape': '\033', 'tab': '\t', 'pageup': '\033[5~',
+        'pagedown': '\033[6~', 'home': '\033[H', 'end': '\033[F',
+        'func1': '\033OP', 'func2': '\033OQ', 'func3': '\033OR',
+        'func4': '\033OS', 'func5': '\033[15~', 'func6': '\033[17~',
+        'func7': '\033[18~', 'func8': '\033[19~', 'func9': '\033[20~',
+        'func10': '\033[21~', 'func11': '\033[23~', 'func12': '\033[24~',
+    }
+
     def perform_input(self, cmd):
-        if cmd.type != 'line':
-            raise Exception('Cheap mode only supports line input')
-        self.infile.write((cmd.cmd+'\n').encode())
-        self.infile.flush()
+        if cmd.type == 'line':
+            self.infile.write((cmd.cmd+'\n').encode())
+            self.infile.flush()
+        elif cmd.type == 'char':
+            cmd = cmd.cmd
+            if cmd in self.key_codes:
+                cmd = self.key_codes[cmd]
+            self.infile.write((cmd).encode())
+            self.infile.flush()
+        else:
+            raise Exception('Cheap mode does not recognize command type: %s' % (cmd.type))
 
     def accept_output(self):
         self.storywin = []
@@ -380,7 +398,7 @@ class GameStateCheap(GameState):
             if ch == b'':
                 break
             output += ch
-            if (output[-2:] == b'\n>'):
+            if (output[-1:] == '>'):
                 break
             
         if time.time() >= timeout_time:
