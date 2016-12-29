@@ -145,6 +145,8 @@ class Command:
             except:
                 pass
             self.cmd = cmd
+        elif self.type == 'refresh':
+            self.cmd = None
         elif self.type == 'include':
             self.cmd = cmd
         elif self.type == 'fileref_prompt':
@@ -424,7 +426,7 @@ class GameStateRemGlk(GameState):
         import json
         update = { 'type':'init', 'gen':0,
                    'metrics': { 'width':80, 'height':40 },
-                   'support': [ 'timer', 'hyperlinks' ],
+                   'support': [ 'timer', 'hyperlinks', 'graphics' ],
                    }
         cmd = json.dumps(update)
         self.infile.write((cmd+'\n').encode())
@@ -464,6 +466,8 @@ class GameStateRemGlk(GameState):
                        }
         elif cmd.type == 'timer':
             update = { 'type':'timer', 'gen':self.generation }
+        elif cmd.type == 'refresh':
+            update = { 'type':'refresh', 'gen':0 }
         elif cmd.type == 'fileref_prompt':
             if self.specialinput != 'fileref_prompt':
                 raise Exception('Game is not expecting a fileref_prompt')
