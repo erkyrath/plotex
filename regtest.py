@@ -316,7 +316,7 @@ class HyperlinkSpanCheck(Check):
             res.linkvalue = int(match.group(1))
             return res
     def reprdetail(self):
-        return '{link=%d} ' % (self.linkvalue,)
+        return '{hyperlink=%d} ' % (self.linkvalue,)
     def subeval(self, lines):
         for para in lines:
             for line in para:
@@ -324,6 +324,53 @@ class HyperlinkSpanCheck(Check):
                     linkval = span.get('hyperlink')
                     text = span.get('text', '')
                     if linkval == self.linkvalue and self.ln in text:
+                        return
+        return 'not found'
+
+class ImageSpanCheck(Check):
+    inrawdata = True
+    @classmethod
+    def buildcheck(cla, ln, args):
+        match = re.match('{image=([0-9]+)([^}]*)}', ln)
+        if match:
+            ln = ln[ match.end() : ].strip()
+            res = ImageSpanCheck(ln, **args)
+            res.imagevalue = int(match.group(1))
+            res.widthvalue = None
+            res.heightvalue = None
+            res.alignmentvalue = None
+            opts = match.group(2)
+            if opts:
+                for val in opts.split(' '):
+                    if not val:
+                        continue
+                    match = re.match('([a-z]+)=([a-z0-9]+)', val)
+                    if not match:
+                        raise Exception('{image} argument not recognized: %s' % val)
+                    key = match.group(1)
+                    val = match.group(2)
+                    if key == 'width':
+                        res.widthvalue = int(val)
+                    elif key == 'height':
+                        res.heightvalue = int(val)
+                    elif key == 'alignment':
+                        res.alignmentvalue = val
+                    else:
+                        raise Exception('{image} argument not recognized: %s' % key)
+            return res
+    def reprdetail(self):
+        return '{image=%d} ' % (self.imagevalue,)
+    def subeval(self, lines):
+        for para in lines:
+            for line in para:
+                for span in line:
+                    if span.get('special') == 'image' and span.get('image') == self.imagevalue:
+                        if self.widthvalue is not None and span.get('width') != self.widthvalue:
+                            continue
+                        if self.heightvalue is not None and span.get('height') != self.heightvalue:
+                            continue
+                        if self.alignmentvalue is not None and span.get('alignment') != self.alignmentvalue:
+                            continue
                         return
         return 'not found'
 
@@ -923,6 +970,7 @@ def run(test):
 checkclasses.append(RegExpCheck)
 checkclasses.append(LiteralCountCheck)
 checkclasses.append(HyperlinkSpanCheck)
+checkclasses.append(ImageSpanCheck)
 checkclasses.append(LiteralCheck)
 if (opts.checkfiles):
     for cc in opts.checkfiles:
