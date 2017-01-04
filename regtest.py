@@ -472,8 +472,12 @@ class GameStateRemGlk(GameState):
     def initialize(self):
         import json
         update = { 'type':'init', 'gen':0,
-                   'metrics': { 'width':80, 'height':40 },
-                   'support': [ 'timer', 'hyperlinks', 'graphics' ],
+                   'metrics': {
+                      'width':800, 'height':480,
+                      'gridcharwidth':10, 'gridcharheight':12,
+                      'buffercharwidth':10, 'buffercharheight':12,
+                   },
+                   'support': [ 'timer', 'hyperlinks', 'graphics', 'graphicswin' ],
                    }
         cmd = json.dumps(update)
         self.infile.write((cmd+'\n').encode())
