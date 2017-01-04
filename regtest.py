@@ -327,6 +327,74 @@ class HyperlinkSpanCheck(Check):
                         return
         return 'not found'
 
+class JSONSpanCheck(Check):
+    inrawdata = True
+    @classmethod
+    def buildcheck(cla, ln, args):
+        import ast
+        match = re.match('{json (.*)}$', ln)
+        if match:
+            res = JSONSpanCheck(ln, **args)
+            opts = match.group(1)
+            ls = []
+            while True:
+                opts = opts.lstrip()
+                if not opts:
+                    break
+                match = re.match('([a-z]+)\\s*:\\s*', opts)
+                if not match:
+                    raise Exception('{json} argument not recognized: %s' % opts)
+                key = match.group(1)
+                opts = opts[ match.end() : ]
+                if opts.startswith('"'):
+                    match = re.match('"([^"])*"', opts)
+                    if not match:
+                        raise Exception('{json} string has bad format: %s' % opts)
+                    val = ast.literal_eval(opts[ : match.end() ])
+                    opts = opts[ match.end() : ]
+                elif opts.startswith("'"):
+                    match = re.match("'([^'])*'", opts)
+                    if not match:
+                        raise Exception('{json} string has bad format: %s' % opts)
+                    val = ast.literal_eval(opts[ : match.end() ])
+                    opts = opts[ match.end() : ]
+                else:
+                    match = re.match('-?[0-9.]+', opts)
+                    if match:
+                        val = ast.literal_eval(opts[ : match.end() ])
+                        opts = opts[ match.end() : ]
+                    else:
+                        match = re.match('[a-zA-Z0-9_]+', opts)
+                        if match:
+                            val0 = opts[ : match.end() ]
+                            if val0 == 'true':
+                                val = True
+                            elif val0 == 'false':
+                                val = False
+                            elif val0 == 'null':
+                                val = None
+                            else:
+                                val = ast.literal_eval(val0)
+                            opts = opts[ match.end() : ]
+                        else:
+                            raise Exception('{json} literal has bad format: %s' % opts)
+                ls.append( (key, val) )
+            res.pairs = ls
+            return res
+    def subeval(self, lines):
+        for para in lines:
+            for line in para:
+                for span in line:
+                    got = True
+                    for (key, val) in self.pairs:
+                        if (key in span and span[key] == val):
+                            continue
+                        got = False
+                        break
+                    if got:
+                        return
+        return 'not found'
+
 class ImageSpanCheck(Check):
     inrawdata = True
     @classmethod
@@ -975,6 +1043,7 @@ checkclasses.append(RegExpCheck)
 checkclasses.append(LiteralCountCheck)
 checkclasses.append(HyperlinkSpanCheck)
 checkclasses.append(ImageSpanCheck)
+checkclasses.append(JSONSpanCheck)
 checkclasses.append(LiteralCheck)
 if (opts.checkfiles):
     for cc in opts.checkfiles:
