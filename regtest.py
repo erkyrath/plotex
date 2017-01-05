@@ -169,6 +169,8 @@ class Command:
                 args['inverse'] = True
             elif val == '{status}':
                 args['instatus'] = True
+            elif val == '{graphic}' or val == '{graphics}':
+                args['ingraphics'] = True
             elif val == '{vital}':
                 args['vital'] = True
             else:
@@ -202,6 +204,7 @@ class Check:
     inrawdata = False
     inverse = False
     instatus = False
+    ingraphics = False
 
     @classmethod
     def buildcheck(cla, ln, args):
@@ -210,6 +213,7 @@ class Check:
     def __init__(self, ln, **args):
         self.inverse = args.get('inverse', False)
         self.instatus = args.get('instatus', False)
+        self.ingraphics = args.get('ingraphics', False)
         self.vital = args.get('vital', False) or opts.vital
         self.ln = ln
         
@@ -220,6 +224,8 @@ class Check:
         invflag = '!' if self.inverse else ''
         if self.instatus:
             invflag += '{status}'
+        if self.ingraphics:
+            invflag += '{graphics}'
         detail = self.reprdetail()
         return '<%s %s%s"%s">' % (self.__class__.__name__, detail, invflag, val,)
 
@@ -230,11 +236,15 @@ class Check:
         if not self.inrawdata:
             if self.instatus:
                 lines = state.statuswin
+            elif self.ingraphics:
+                lines = state.graphicswin
             else:
                 lines = state.storywin
         else:
             if self.instatus:
                 lines = state.statuswindat
+            elif self.ingraphics:
+                lines = state.graphicswindat
             else:
                 lines = state.storywindat
         res = self.subeval(lines)
@@ -460,9 +470,11 @@ class GameState:
         self.outfile = outfile
         # Lists of strings
         self.statuswin = []
+        self.graphicswin = []
         self.storywin = []
         # Lists of line data lists
         self.statuswindat = []
+        self.graphicswindat = []
         self.storywindat = []
 
     def initialize(self):
@@ -700,6 +712,11 @@ class GameStateRemGlk(GameState):
                         dat = self.extract_raw(line)
                         if linenum >= 0 and linenum < len(self.statuswindat):
                             self.statuswindat[linenum].append(dat)
+                elif win.get('type') == 'graphics':
+                    draw = content.get('draw')
+                    if draw:
+                        self.graphicswindat.append([draw])
+                        
 
         inputs = update.get('input')
         specialinputs = update.get('specialinput')
