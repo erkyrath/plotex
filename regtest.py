@@ -189,9 +189,9 @@ class Command:
 class Check:
     """Represents a single test (applied to the output of a game command).
 
-    This can be applied to the story window or the status window. (The
+    This can be applied to the story, status, or graphics window. (The
     model is simplistic and assumes there is exactly one story window
-    and at most one status window.)
+    and at most one of the other two kinds.)
 
     An "inverse" test has reversed sense.
 
@@ -457,8 +457,8 @@ class GameState:
     (the pipe in and out streams). It's responsible for sending commands
     to the interpreter, and receiving the game output back.
 
-    Currently this class is set up to manage exactly one story window
-    and exactly one status window. (A missing window is treated as blank.)
+    Currently this class is set up to manage exactly one each of story,
+    status, and graphics windows. (A missing window is treated as blank.)
     This is not very general -- we should understand the notion of multiple
     windows -- but it's adequate for now.
 
@@ -527,9 +527,9 @@ class GameStateCheap(GameState):
 class GameStateRemGlk(GameState):
     """Wrapper for a RemGlk-based interpreter. This can in theory handle
     any I/O supported by Glk. But the current implementation is limited
-    to line and char input, and no more than one status (grid) window.
-    Multiple story (buffer) windows are accepted, but their output for
-    a given turn is agglomerated.
+    to line and char input, and no more than one status (grid) and one
+    graphics window. Multiple story (buffer) windows are accepted, but
+    their output for a given turn is agglomerated.
     """
 
     @staticmethod
