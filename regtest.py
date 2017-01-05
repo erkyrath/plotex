@@ -417,6 +417,8 @@ class ImageSpanCheck(Check):
             res.widthvalue = None
             res.heightvalue = None
             res.alignmentvalue = None
+            res.xvalue = None
+            res.yvalue = None
             opts = match.group(2)
             if opts:
                 for val in opts.split(' '):
@@ -433,6 +435,10 @@ class ImageSpanCheck(Check):
                         res.heightvalue = int(val)
                     elif key == 'alignment':
                         res.alignmentvalue = val
+                    elif key == 'x':
+                        res.xvalue = int(val)
+                    elif key == 'y':
+                        res.yvalue = int(val)
                     else:
                         raise Exception('{image} argument not recognized: %s' % key)
             return res
@@ -448,6 +454,10 @@ class ImageSpanCheck(Check):
                         if self.heightvalue is not None and span.get('height') != self.heightvalue:
                             continue
                         if self.alignmentvalue is not None and span.get('alignment') != self.alignmentvalue:
+                            continue
+                        if self.xvalue is not None and span.get('x') != self.xvalue:
+                            continue
+                        if self.yvalue is not None and span.get('y') != self.yvalue:
                             continue
                         return
         return 'not found'
