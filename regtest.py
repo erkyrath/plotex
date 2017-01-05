@@ -660,6 +660,7 @@ class GameStateRemGlk(GameState):
             for win in windows:
                 id = win.get('id')
                 self.windows[id] = win
+            
             grids = [ win for win in self.windows.values() if win.get('type') == 'grid' ]
             if len(grids) > 1:
                 raise Exception('Cannot handle more than one grid window')
@@ -713,10 +714,11 @@ class GameStateRemGlk(GameState):
                         if linenum >= 0 and linenum < len(self.statuswindat):
                             self.statuswindat[linenum].append(dat)
                 elif win.get('type') == 'graphics':
+                    self.graphicswin = []
+                    self.graphicswindat = []
                     draw = content.get('draw')
                     if draw:
                         self.graphicswindat.append([draw])
-                        
 
         inputs = update.get('input')
         specialinputs = update.get('specialinput')
