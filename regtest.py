@@ -147,6 +147,16 @@ class Command:
             self.cmd = cmd
         elif self.type == 'refresh':
             self.cmd = None
+        elif self.type == 'arrange':
+            self.cmd = None
+            self.width = None
+            self.height = None
+            try:
+                ls = cmd.split()
+                self.width = int(ls[0])
+                self.height = int(ls[1])
+            except:
+                pass
         elif self.type == 'include':
             self.cmd = cmd
         elif self.type == 'fileref_prompt':
@@ -558,15 +568,24 @@ class GameStateRemGlk(GameState):
         if not con:
             return []
         return con
+
+    @staticmethod
+    def create_metrics(width=None, height=None):
+        if not width:
+            width = 800
+        if not height:
+            height = 480
+        res = {
+            'width':width, 'height':height,
+            'gridcharwidth':10, 'gridcharheight':12,
+            'buffercharwidth':10, 'buffercharheight':12,
+        }
+        return res
     
     def initialize(self):
         import json
         update = { 'type':'init', 'gen':0,
-                   'metrics': {
-                      'width':800, 'height':480,
-                      'gridcharwidth':10, 'gridcharheight':12,
-                      'buffercharwidth':10, 'buffercharheight':12,
-                   },
+                   'metrics': GameStateRemGlk.create_metrics(),
                    'support': [ 'timer', 'hyperlinks', 'graphics', 'graphicswin' ],
                    }
         cmd = json.dumps(update)
@@ -607,6 +626,10 @@ class GameStateRemGlk(GameState):
                        }
         elif cmd.type == 'timer':
             update = { 'type':'timer', 'gen':self.generation }
+        elif cmd.type == 'arrange':
+            update = { 'type':'arrange', 'gen':self.generation,
+                       'metrics': GameStateRemGlk.create_metrics(cmd.width, cmd.height)
+                       }
         elif cmd.type == 'refresh':
             update = { 'type':'refresh', 'gen':0 }
         elif cmd.type == 'fileref_prompt':
