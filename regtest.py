@@ -128,6 +128,8 @@ class Command:
                 self.cmd = cmd
             elif cmd.lower() in Command.glk_key_names:
                 self.cmd = cmd.lower()
+            elif cmd.lower() == 'space':
+                self.cmd = ' '
             elif cmd.lower().startswith('0x'):
                 self.cmd = unichr(int(cmd[2:], 16))
             else:
