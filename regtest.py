@@ -163,6 +163,8 @@ class Command:
             self.cmd = cmd
         elif self.type == 'fileref_prompt':
             self.cmd = cmd
+        elif self.type == 'debug':
+            self.cmd = cmd
         else:
             raise Exception('Unknown command type: %s' % (type,))
         self.checks = []
@@ -639,6 +641,10 @@ class GameStateRemGlk(GameState):
                 raise Exception('Game is not expecting a fileref_prompt')
             update = { 'type':'specialresponse', 'gen':self.generation,
                        'response':'fileref_prompt', 'value':cmd.cmd
+                       }
+        elif cmd.type == 'debug':
+            update = { 'type':'debuginput', 'gen':self.generation,
+                       'value':cmd.cmd
                        }
         else:
             raise Exception('Rem mode does not recognize command type: %s' % (cmd.type))
