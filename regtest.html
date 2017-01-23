@@ -6,6 +6,7 @@
 pre { margin-left: 3em; }
 dl { margin-left: 3em; }
 dt { font-family: monospace; }
+dd { margin-top: 0.5em; margin-bottom: 0.5em; }
 .TestName { color: #00A; }
 .TestCmd { color: #070; }
 .TestComment { color: #900; }
@@ -354,22 +355,22 @@ When writing these input forms in a test, do not put any whitespace between the 
 
 <dl>
 
-<dt><code>&gt;{char}</code> X
-<dt><code>&gt;{char}</code> escape
-<dt><code>&gt;{char}</code> 123
-<dt><code>&gt;{char}</code> 0x1F0
+<dt>&gt;{char} X
+<dt>&gt;{char} escape
+<dt>&gt;{char} 123
+<dt>&gt;{char} 0x1F0
 <dd>Character (keystroke) input. A single character stands for itself. Standard keystroke names (<code>left</code>, <code>escape</code>, etc) are accepted, as are ASCII or Unicode code as decimal or hexadecimal. If you do not provide a value, RegTest assumes a Return keystroke. RegTest will be able to tell whether the game is expecting line or character input, and will report an error if your script offers the wrong one.
 
-<dt><code>&gt;{timer}</code>
+<dt>&gt;{timer}
 <dd>Timer input. RegTest does not really perform a delay for timer events; it just tells RemGlk that the timer has fired. (When running a game which uses timer events, you should pass the <code>-support timer</code> option to RemGlk.)
 
-<dt><code>&gt;{hyperlink} 123</code>
+<dt>&gt;{hyperlink} 123
 <dd>Hyperlink input. The value should be a (decimal) integer containing a link value. (When running a game which uses timer events, you should pass the <code>-support hyperlinks</code> option to RemGlk.)
 
-<dt><code>&gt;{fileref_prompt} savefile</code>
+<dt>&gt;{fileref_prompt} savefile
 <dd>The response to a file prompt (save, restore, transcript, etc). The line should contain a simple filename (no directory, no suffix).
 
-<dt><code>&gt;{debug} backtrace</code>
+<dt>&gt;{debug} backtrace
 <dd>A debug command. The value will be sent to the game (or, usually, to the interpreter) as a <code>debuginput</code> event. Note that RegTest cannot currently check debug output.
 
 </dl>
