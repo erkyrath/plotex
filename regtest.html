@@ -370,6 +370,13 @@ When writing these input forms in a test, do not put any whitespace between the 
 <dt>&gt;{fileref_prompt} savefile
 <dd>The response to a file prompt (save, restore, transcript, etc). The line should contain a simple filename (no directory, no suffix).
 
+<dt>&gt;{arrange} 640
+<dt>&gt;{arrange} 640 480 
+<dd>A window arrangement event. The virtual game window will be resized to the given pixel width, or width and height. (The virtual monospace font is assumed to be 10x12 pixels.)
+
+<dt>&gt;{refresh}
+<dd>A browser refresh event. This simulates the situation where GlkOte is reconnecting to the game and requires the entire display state to be retransmitted.
+
 <dt>&gt;{debug} backtrace
 <dd>A debug command. The value will be sent to the game (or, usually, to the interpreter) as a <code>debuginput</code> event. Note that RegTest cannot currently check debug output.
 
