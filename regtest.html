@@ -432,6 +432,7 @@ Any of these checks may be combined with the modifiers listed above.
 <dt>{json key:'value' key2:123 key3:true}
 <dd>Check whether a JSON stanza appears as a span in the output. This allows you to check the raw JSON output for special forms. For example, this checks for the operation of drawing a 10x10 pixel red square in a graphics window:
 <dd><code>{graphics} {json special:'fill' color:'#FF0000' width:10 height:10}</code>
+<dd>Note that we use the <code>{graphics}</code> modifier (see above) on a <code>{json}</code> check.
 
 </dl>
 
