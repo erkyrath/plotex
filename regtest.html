@@ -413,7 +413,34 @@ RegTest currently assumes that there is no more than one status (textgrid) windo
 
 <h3>Dictionary of Checks</h3>
 
+<p>
+Any of these checks may be combined with the modifiers listed above.
+</p>
+
 <dl>
+
+<dt>text
+<dd>Check whether the text appears anywhere in any line of the output.
+
+<dt>/regex
+<dd>Check the given regular expression matches any line of the output.
+
+<dt>{count=5} text
+<dd>Check whether the text appears at least the given number of times in the output. (More is okay.)
+
+<dt>{hyperlink=123} text
+<dd>Check whether there is a hyperlink with the given (decimal) value, which also contains the given text.
+
+<dt>{image=5}
+<dt>{image=5 x=100 y=200 width=32 height=32}
+<dt>{image=5 width=32 height=32 alignment=inlineup}
+<dd>Check whether there is an image with the given number. The rest of the modifiers are all optional; they are checked if present.
+<dd>Remember that images can appear in graphics windows (with x, y, width, and height values) or in the story window (with alignment, width, and height values).
+
+<dt>{json key:'value' key2:123 key3:true}
+<dd>Check whether a JSON stanza appears as a span in the output. This allows you to check the raw JSON output for special forms. For example, this checks for the operation of drawing a 10x10 pixel red square in a graphics window:
+<dd><code>{graphics} {json special:'fill' color:'#FF0000' width:10 height:10}</code>
+
 </dl>
 
 <hr>
