@@ -351,6 +351,10 @@ An input line starting with <code>&gt;{fileref_prompt}</code> is a response to a
 </p>
 
 <p>
+An input line starting with <code>&gt;{debug}</code> is a debug command. It will be sent to the game (or, usually, to the interpreter) as a <code>debuginput</code> event. Note that RegTest cannot currently check debug output.
+</p>
+
+<p>
 In <code>remglk-test</code> we enter the game menus by typing "help"; we then navigate to one of the menu options and trigger it. We test the option's output -- this is the "How authentic is this edition?" text. Then we hit space (ASCII 32) to return to the menu, then "Q" to return to the game. We can then proceed with game commands as before.
 </p>
 
