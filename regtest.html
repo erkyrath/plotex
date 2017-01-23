@@ -342,11 +342,6 @@ The test demonstrates two special features: character input and status line outp
 These features are signified by lines with <code>{curly brace tags}</code>, as shown above.
 </p>
 
-<p>
-###
-A test line starting with <code>{status}</code> tests the contents of the status window, rather than the story window.
-</p>
-
 <h3>Dictionary of Inputs</h3>
 
 <p>
@@ -355,11 +350,15 @@ When writing these input forms in a test, do not put any whitespace between the 
 
 <dl>
 
+<dt>&gt; text
+<dd>Regular line input.
+
 <dt>&gt;{char} X
 <dt>&gt;{char} escape
 <dt>&gt;{char} 123
 <dt>&gt;{char} 0x1F0
-<dd>Character (keystroke) input. A single character stands for itself. Standard keystroke names (<code>left</code>, <code>escape</code>, etc) are accepted, as are ASCII or Unicode code as decimal or hexadecimal. If you do not provide a value, RegTest assumes a Return keystroke. RegTest will be able to tell whether the game is expecting line or character input, and will report an error if your script offers the wrong one.
+<dd>Character (keystroke) input. A single character stands for itself. Standard keystroke names (<code>left</code>, <code>escape</code>, etc) are accepted, as are ASCII or Unicode code as decimal or hexadecimal. If you do not provide a value, RegTest assumes a Return keystroke.
+<dd>Note that in RemGlk mode, RegTest is able to tell whether the game is expecting line or character input. It will report an error if your script offers the wrong one.
 
 <dt>&gt;{timer}
 <dd>Timer input. RegTest does not really perform a delay for timer events; it just tells RemGlk that the timer has fired. (When running a game which uses timer events, you should pass the <code>-support timer</code> option to RemGlk.)
@@ -383,6 +382,38 @@ When writing these input forms in a test, do not put any whitespace between the 
 <dt>&gt;{include} testname
 <dd>Performs all the commands and checks in the named test.
 
+</dl>
+
+<h3>Dictionary of Check Modifiers</h3>
+
+<p>
+You may put any of these prefixes before a check. They may be combined freely (except for <code>{status}</code> and <code>{graphics}</code>).
+</p>
+
+<dl>
+
+<dt>!<i>CHECK...</i>
+<dt>{invert} <i>CHECK...</i>
+<dd>Invert the sense of the check -- test that it is false.
+
+<dt>{vital} <i>CHECK...</i>
+<dd>If the check fails, end the test run immediately.
+
+<dt>{status} <i>CHECK...</i>
+<dd>Test the contents of the status window, rather than the story window.
+
+<dt>{graphics} <i>CHECK...</i>
+<dd>Test the contents of the graphics window, rather than the story window.
+
+<p>
+RegTest currently assumes that there is no more than one status (textgrid) window and no more than one graphics window.
+</p>
+
+</dl>
+
+<h3>Dictionary of Checks</h3>
+
+<dl>
 </dl>
 
 <hr>
