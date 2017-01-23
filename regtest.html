@@ -327,36 +327,52 @@ The <code>remglk-test</code> will now succeed. (<code>test-that-fails</code> wil
 </p>
 
 <p>
-The test demonstrates two special features:
+The test demonstrates two special features: character input and status line output. We enter the game menus by typing "help"; we then navigate to one of the menu options and trigger it. We test the option's output -- this is the "How authentic is this edition?" text. Then we hit space (ASCII 32) to return to the menu, then "Q" to return to the game. We can then proceed with game commands as before.
+</p>
+
+<pre>
+<b class="TestCmd">&gt; help</b>
+{status} About Adventure
+
+<b class="TestCmd">&gt;{char} N</b>
+</pre>
+
+<p>
+These features are signified by lines with <code>{curly brace tags}</code>, as shown above.
 </p>
 
 <p>
+###
 A test line starting with <code>{status}</code> tests the contents of the status window, rather than the story window.
 </p>
 
-<p>
-An input line starting with <code>&gt;{char}</code> is character (keystroke) input, rather than line input. The line should contain a single character. You may also pass a standard keystroke name (<code>left</code>, <code>escape</code>, etc), or a ASCII or Unicode code as decimal (<code>123</code>) or hex (<code>0x1F0</code>). <code>&gt;{char}</code> with nothing following indicates a Return keystroke. RegTest will be able to tell whether the game is expecting line or character input, and will report an error if your script offers the wrong one.
-</p>
+<h3>Dictionary of Inputs</h3>
 
 <p>
-An input line starting with <code>&gt;{timer}</code> is timer input. The rest of the line is ignored. RegTest does not really perform a delay for timer events; it just tells RemGlk that the timer has fired. (When running a game which uses timer events, you should pass the <code>-support timer</code> option to RemGlk.)
+When writing these input forms in a test, do not put any whitespace between the <code>"&gt;"</code> and <code>"{"</code> characters. An input line like <code>"&gt; {foo}"</code> is treated as regular line input, entering the string "{foo}".
 </p>
 
-<p>
-An input line starting with <code>&gt;{hyperlink}</code> is hyperlink input. The rest of the line should be a (decimal) integer containing a link value. (When running a game which uses timer events, you should pass the <code>-support hyperlinks</code> option to RemGlk.)
-</p>
+<dl>
 
-<p>
-An input line starting with <code>&gt;{fileref_prompt}</code> is a response to a file prompt (save, restore, transcript, etc). The line should contain a simple filename (no directory, no suffix).
-</p>
+<dt><code>&gt;{char}</code> X
+<dt><code>&gt;{char}</code> escape
+<dt><code>&gt;{char}</code> 123
+<dt><code>&gt;{char}</code> 0x1F0
+<dd>Character (keystroke) input. A single character stands for itself. Standard keystroke names (<code>left</code>, <code>escape</code>, etc) are accepted, as are ASCII or Unicode code as decimal or hexadecimal. If you do not provide a value, RegTest assumes a Return keystroke. RegTest will be able to tell whether the game is expecting line or character input, and will report an error if your script offers the wrong one.
 
-<p>
-An input line starting with <code>&gt;{debug}</code> is a debug command. It will be sent to the game (or, usually, to the interpreter) as a <code>debuginput</code> event. Note that RegTest cannot currently check debug output.
-</p>
+<dt><code>&gt;{timer}</code>
+<dd>Timer input. RegTest does not really perform a delay for timer events; it just tells RemGlk that the timer has fired. (When running a game which uses timer events, you should pass the <code>-support timer</code> option to RemGlk.)
 
-<p>
-In <code>remglk-test</code> we enter the game menus by typing "help"; we then navigate to one of the menu options and trigger it. We test the option's output -- this is the "How authentic is this edition?" text. Then we hit space (ASCII 32) to return to the menu, then "Q" to return to the game. We can then proceed with game commands as before.
-</p>
+<dt><code>&gt;{hyperlink} 123</code>
+<dd>Hyperlink input. The value should be a (decimal) integer containing a link value. (When running a game which uses timer events, you should pass the <code>-support hyperlinks</code> option to RemGlk.)
+
+<dt><code>&gt;{fileref_prompt} savefile</code>
+<dd>The response to a file prompt (save, restore, transcript, etc). The line should contain a simple filename (no directory, no suffix).
+
+<dt><code>&gt;{debug} backtrace</code>
+<dd>A debug command. The value will be sent to the game (or, usually, to the interpreter) as a <code>debuginput</code> event. Note that RegTest cannot currently check debug output.
+
+</dl>
 
 <hr>
 <p>
