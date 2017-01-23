@@ -1,5 +1,5 @@
 # RegTest: a really simple IF regression tester.
-#   Version 1.6
+#   Version 1.7
 #   Andrew Plotkin <erkyrath@eblong.com>
 #   This script is in the public domain.
 #
