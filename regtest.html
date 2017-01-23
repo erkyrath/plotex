@@ -153,14 +153,6 @@ A check line starting with <code>"!"</code> is negated: RegTest verifies that <e
 </p>
 
 <p>
-If the check line starts with <code>"{count=N}"</code> (where N is a number), then RegTest verifies that the text occurs <em>at least N times</em> in the output.
-</p>
-
-<p>
-If the check line starts with <code>"{vital}"</code>, then if that check fails, the test run ends. You can also use the <code>--vital</code> command-line option to indicate that every check is vital (that is, abort each run on the first error).
-</p>
-
-<p>
 These are <em>independent</em> checks; order doesn't matter. (The line about the keys actually occurs before the one about the food.)
 </p>
 
@@ -426,7 +418,7 @@ Any of these checks may be combined with the modifiers listed above.
 <dd>Check the given regular expression matches any line of the output.
 
 <dt>{count=5} text
-<dd>Check whether the text appears at least the given number of times in the output. (More is okay.)
+<dd>Check whether the text appears <em>at least</em> the given number of times in the output. (In this example, we check whether the string "text" appears 5 or more times. Could be in separate lines of the output or all in the same line.)
 
 <dt>{hyperlink=123} text
 <dd>Check whether there is a hyperlink with the given (decimal) value, which also contains the given text.
