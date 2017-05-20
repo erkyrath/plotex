@@ -1,3 +1,6 @@
+# We use the print() function for Python 2/3 compatibility
+from __future__ import print_function
+
 import sys
 import os, os.path
 import optparse
@@ -396,7 +399,7 @@ def run(gamefile):
         ifid = gamefile
         dir = os.path.join(opts.shotdir, ifid)
         if not os.path.exists(dir):
-            print '%s: no IFID directory (%s)' % (ifid, dir)
+            print('%s: no IFID directory (%s)' % (ifid, dir))
             return
         try:
             gamefile = None
@@ -408,29 +411,29 @@ def run(gamefile):
                     gamefile = body
             fl.close()
             if not gamefile:
-                print '%s: no file listed in contents file in %s' % (ifid, dir)
+                print('%s: no file listed in contents file in %s' % (ifid, dir))
                 return
         except IOError:
-            print '%s: cannot read contents file in %s' % (ifid, dir)
+            print('%s: cannot read contents file in %s' % (ifid, dir))
             return
 
     if not os.path.exists(gamefile):
-        print '%s: no such file' % (gamefile,)
+        print('%s: no such file' % (gamefile,))
         return
     
     try:
         format = get_format(gamefile)
     except Exception, ex:
-        print '%s: unable to get format: %s: %s' % (gamefile, ex.__class__.__name__, ex)
+        print('%s: unable to get format: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
     if format not in ['zcode', 'glulx']:
-        print '%s: format is not zcode/glulx: %s' % (gamefile, format)
+        print('%s: format is not zcode/glulx: %s' % (gamefile, format))
         return
 
     try:
         ifid = get_ifid(gamefile)
     except Exception, ex:
-        print '%s: unable to get IFID: %s: %s' % (gamefile, ex.__class__.__name__, ex)
+        print('%s: unable to get IFID: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
 
     dir = os.path.join(opts.shotdir, ifid)
@@ -462,7 +465,7 @@ def run(gamefile):
                     cmd = Command(body)
                 cmdlist.append(cmd)
             else:
-                print '%s: warning: unrecognized line in options: %s' % (gamefile, ln)
+                print('%s: warning: unrecognized line in options: %s' % (gamefile, ln))
         fl.close()
     
     args = [ terppath ] + testterpargs + [ gamefile ]
@@ -472,7 +475,7 @@ def run(gamefile):
         proc = subprocess.Popen(args,
                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     except Exception, ex:
-        print '%s: unable to launch interpreter: %s: %s' % (gamefile, ex.__class__.__name__, ex)
+        print('%s: unable to launch interpreter: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
     
     try:
@@ -484,9 +487,9 @@ def run(gamefile):
             gamestate.perform_input(cmd)
             gamestate.accept_output()
         write_html(ifid, gamefile, gamestate.statuswin, gamestate.storywin, dirpath=dir)
-        print '%s: (IFID %s): done' % (gamefile, ifid)
+        print('%s: (IFID %s): done' % (gamefile, ifid))
     except Exception, ex:
-        print '%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex)
+        print('%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex))
     
     gamestate = None
     proc.stdin.close()
@@ -498,7 +501,7 @@ def run(gamefile):
     return ifid
 
 if not args:
-    print 'usage: ifomatic.py [options] files or ifids ...'
+    print('usage: ifomatic.py [options] files or ifids ...')
     sys.exit(-1)
 
 styleblock = ''
