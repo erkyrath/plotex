@@ -35,11 +35,19 @@ popt.add_option('--babel',
 (opts, args) = popt.parse_args()
 
 class Command:
-    glkkeyset = set(['left', 'right', 'up', 'down',
-                     'return', 'delete', 'escape', 'tab',
-                     'pageup', 'pagedown', 'home', 'end',
-                     'func1', 'func2', 'func3', 'func4', 'func5', 'func6',
-                     'func7', 'func8', 'func9', 'func10', 'func11', 'func12'])
+    """Command is one cycle of a RegTest -- a game input, followed by
+    tests to run on the game's output.
+    """
+    glk_key_names = {
+        'left':0xfffffffe, 'right':0xfffffffd, 'up':0xfffffffc,
+        'down':0xfffffffb, 'return':0xfffffffa, 'delete':0xfffffff9,
+        'escape':0xfffffff8, 'tab':0xfffffff7, 'pageup':0xfffffff6,
+        'pagedown':0xfffffff5, 'home':0xfffffff4, 'end':0xfffffff3,
+        'func1':0xffffffef, 'func2':0xffffffee, 'func3':0xffffffed,
+        'func4':0xffffffec, 'func5':0xffffffeb, 'func6':0xffffffea,
+        'func7':0xffffffe9, 'func8':0xffffffe8, 'func9':0xffffffe7,
+        'func10':0xffffffe6, 'func11':0xffffffe5, 'func12':0xffffffe4,
+    }
     
     def __init__(self, cmd, type='line'):
         self.type = type
@@ -51,12 +59,12 @@ class Command:
                 self.cmd = '\n'
             elif len(cmd) == 1:
                 self.cmd = cmd
+            elif cmd.lower() in Command.glk_key_names:
+                self.cmd = cmd.lower()
+            elif cmd.lower() == 'space':
+                self.cmd = ' '
             elif cmd.lower().startswith('0x'):
                 self.cmd = unichr(int(cmd[2:], 16))
-            elif cmd == 'space':
-                self.cmd = ' '
-            elif cmd in Command.glkkeyset:
-                self.cmd = cmd
             else:
                 try:
                     self.cmd = unichr(int(cmd))
@@ -64,12 +72,35 @@ class Command:
                     pass
             if self.cmd is None:
                 raise Exception('Unable to interpret char "%s"' % (cmd,))
+        elif self.type == 'timer':
+            self.cmd = None
+        elif self.type == 'hyperlink':
+            try:
+                cmd = int(cmd)
+            except:
+                pass
+            self.cmd = cmd
+        elif self.type == 'refresh':
+            self.cmd = None
+        elif self.type == 'arrange':
+            self.cmd = None
+            self.width = None
+            self.height = None
+            try:
+                ls = cmd.split()
+                self.width = int(ls[0])
+                self.height = int(ls[1])
+            except:
+                pass
         elif self.type == 'include':
             self.cmd = cmd
         elif self.type == 'fileref_prompt':
             self.cmd = cmd
+        elif self.type == 'debug':
+            self.cmd = cmd
         else:
             raise Exception('Unknown command type: %s' % (type,))
+        self.checks = []
     def __repr__(self):
         return '<Command "%s">' % (self.cmd,)
 
