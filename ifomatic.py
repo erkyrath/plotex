@@ -518,7 +518,7 @@ def escape_json(val):
             if och < 128:
                 res.append(chr(och))
             else:
-                res.append('\u%04x' % (och,))
+                res.append('\\u%04x' % (och,))
     res.append('"')
     return ''.join(res)
 
