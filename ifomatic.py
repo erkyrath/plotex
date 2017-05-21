@@ -109,8 +109,8 @@ class GameState:
     (the pipe in and out streams). It's responsible for sending commands
     to the interpreter, and receiving the game output back.
 
-    Currently this class is set up to manage exactly one story window
-    and exactly one status window. (A missing window is treated as blank.)
+    Currently this class is set up to manage exactly one each of story,
+    status, and graphics windows. (A missing window is treated as blank.)
     This is not very general -- we should understand the notion of multiple
     windows -- but it's adequate for now.
 
@@ -120,8 +120,14 @@ class GameState:
     def __init__(self, infile, outfile):
         self.infile = infile
         self.outfile = outfile
+        # Lists of strings
         self.statuswin = []
+        self.graphicswin = []
         self.storywin = []
+        # Lists of line data lists
+        self.statuswindat = []
+        self.graphicswindat = []
+        self.storywindat = []
 
     def initialize(self):
         pass
