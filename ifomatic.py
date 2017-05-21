@@ -1,6 +1,21 @@
 # We use the print() function for Python 2/3 compatibility
 from __future__ import print_function
 
+# We use the Py2 unichr() function. In Py3 there is no such function,
+# but we define a back-polyfill. (I'm lazy.)
+try:
+    unichr(32)
+except NameError:
+    unichr = chr
+
+# In Py2, we'll need a bit of extra decoding.
+py2_readline = False
+try:
+    unicode
+    py2_readline = True
+except:
+    pass
+
 import sys
 import os, os.path
 import optparse
@@ -8,6 +23,7 @@ import subprocess
 import select
 import re
 import datetime
+import time
 
 popt = optparse.OptionParser(usage='ifomatic.py [options] files or ifids ...')
 
@@ -31,6 +47,12 @@ popt.add_option('--babel',
                 action='store', dest='babel',
                 default='babel',
                 help='Babel tool')
+popt.add_option('--timeout',
+                dest='timeout_secs', type=float, default=1.0,
+                help='timeout interval (default: 1.0 sec)')
+popt.add_option('-v', '--verbose',
+                action='count', dest='verbose', default=0,
+                help='display the transcripts as they run')
 
 (opts, args) = popt.parse_args()
 
@@ -659,7 +681,7 @@ def run(gamefile):
     
     try:
         format = get_format(gamefile)
-    except Exception, ex:
+    except Exception as ex:
         print('%s: unable to get format: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
     if format not in ['zcode', 'glulx']:
@@ -668,7 +690,7 @@ def run(gamefile):
 
     try:
         ifid = get_ifid(gamefile)
-    except Exception, ex:
+    except Exception as ex:
         print('%s: unable to get IFID: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
 
@@ -710,7 +732,7 @@ def run(gamefile):
     try:
         proc = subprocess.Popen(args,
                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    except Exception, ex:
+    except Exception as ex:
         print('%s: unable to launch interpreter: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
     
@@ -724,7 +746,7 @@ def run(gamefile):
             gamestate.accept_output()
         write_html(ifid, gamefile, gamestate.statuswin, gamestate.storywin, dirpath=dir)
         print('%s: (IFID %s): done' % (gamefile, ifid))
-    except Exception, ex:
+    except Exception as ex:
         print('%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex))
     
     gamestate = None
