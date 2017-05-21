@@ -33,6 +33,7 @@ import subprocess
 import select
 import re
 import datetime
+import json
 import time
 
 popt = optparse.OptionParser(usage='ifomatic.py [options] files or ifids ...')
@@ -152,14 +153,6 @@ class GameState:
     def __init__(self, infile, outfile):
         self.infile = infile
         self.outfile = outfile
-        # Lists of strings
-        self.statuswin = []
-        self.graphicswin = []
-        self.storywin = []
-        # Lists of line data lists
-        self.statuswindat = []
-        self.graphicswindat = []
-        self.storywindat = []
 
     def initialize(self):
         pass
@@ -209,7 +202,6 @@ class GameStateRemGlk(GameState):
         return res
     
     def initialize(self):
-        import json
         update = { 'type':'init', 'gen':0,
                    'metrics': GameStateRemGlk.create_metrics(),
                    'support': [ 'timer', 'hyperlinks', 'graphics', 'graphicswin' ],
@@ -219,36 +211,22 @@ class GameStateRemGlk(GameState):
         self.infile.flush()
         self.generation = 0
         self.windows = {}
-        # This doesn't track multiple-window input the way it should,
-        # nor distinguish hyperlink input state across multiple windows.
-        self.lineinputwin = None
-        self.charinputwin = None
-        self.specialinput = None
-        self.hyperlinkinputwin = None
         
     def perform_input(self, cmd):
-        import json
         if cmd.type == 'line':
-            if not self.lineinputwin:
-                raise Exception('Game is not expecting line input')
             update = { 'type':'line', 'gen':self.generation,
-                       'window':self.lineinputwin, 'value':cmd.cmd
+                       'window':'###', 'value':cmd.cmd
                        }
         elif cmd.type == 'char':
-            if not self.charinputwin:
-                raise Exception('Game is not expecting char input')
             val = cmd.cmd
             if val == '\n':
                 val = 'return'
-            # We should handle arrow keys, too
             update = { 'type':'char', 'gen':self.generation,
-                       'window':self.charinputwin, 'value':val
+                       'window':'###', 'value':val
                        }
         elif cmd.type == 'hyperlink':
-            if not self.hyperlinkinputwin:
-                raise Exception('Game is not expecting hyperlink input')
             update = { 'type':'hyperlink', 'gen':self.generation,
-                       'window':self.hyperlinkinputwin, 'value':cmd.cmd
+                       'window':'###', 'value':cmd.cmd
                        }
         elif cmd.type == 'timer':
             update = { 'type':'timer', 'gen':self.generation }
@@ -269,7 +247,7 @@ class GameStateRemGlk(GameState):
                        'value':cmd.cmd
                        }
         else:
-            raise Exception('Rem mode does not recognize command type: %s' % (cmd.type))
+            raise Exception('Command type not recognized: %s' % (cmd.type))
         if opts.verbose >= 2:
             ObjPrint.pprint(update)
             print()
@@ -323,22 +301,6 @@ class GameStateRemGlk(GameState):
             for win in windows:
                 id = win.get('id')
                 self.windows[id] = win
-            
-            grids = [ win for win in self.windows.values() if win.get('type') == 'grid' ]
-            if len(grids) > 1:
-                raise Exception('Cannot handle more than one grid window')
-            if not grids:
-                self.statuswin = []
-                self.statuswindat = []
-            else:
-                win = grids[0]
-                height = win.get('gridheight', 0)
-                if height < len(self.statuswin):
-                    self.statuswin = self.statuswin[0:height]
-                    self.statuswindat = self.statuswindat[0:height]
-                while height > len(self.statuswin):
-                    self.statuswin.append('')
-                    self.statuswindat.append([])
 
         contents = update.get('content')
         if contents is not None:
@@ -347,65 +309,10 @@ class GameStateRemGlk(GameState):
                 win = self.windows.get(id)
                 if not win:
                     raise Exception('No such window')
-                if win.get('type') == 'buffer':
-                    self.storywin = []
-                    self.storywindat = []
-                    text = content.get('text')
-                    if text:
-                        for line in text:
-                            dat = self.extract_text(line)
-                            if (opts.verbose == 1):
-                                if (dat != '>'):
-                                    print(dat)
-                            if line.get('append') and len(self.storywin):
-                                self.storywin[-1] += dat
-                            else:
-                                self.storywin.append(dat)
-                            dat = self.extract_raw(line)
-                            if line.get('append') and len(self.storywindat):
-                                self.storywindat[-1].append(dat)
-                            else:
-                                self.storywindat.append([dat])
-                elif win.get('type') == 'grid':
-                    lines = content.get('lines')
-                    for line in lines:
-                        linenum = line.get('line')
-                        dat = self.extract_text(line)
-                        if linenum >= 0 and linenum < len(self.statuswin):
-                            self.statuswin[linenum] = dat
-                        dat = self.extract_raw(line)
-                        if linenum >= 0 and linenum < len(self.statuswindat):
-                            self.statuswindat[linenum].append(dat)
-                elif win.get('type') == 'graphics':
-                    self.graphicswin = []
-                    self.graphicswindat = []
-                    draw = content.get('draw')
-                    if draw:
-                        self.graphicswindat.append([draw])
+                pass
 
         inputs = update.get('input')
         specialinputs = update.get('specialinput')
-        if specialinputs is not None:
-            self.specialinput = specialinputs.get('type')
-            self.lineinputwin = None
-            self.charinputwin = None
-            self.hyperlinkinputwin = None
-        elif inputs is not None:
-            self.specialinput = None
-            self.lineinputwin = None
-            self.charinputwin = None
-            self.hyperlinkinputwin = None
-            for input in inputs:
-                if input.get('type') == 'line':
-                    if self.lineinputwin:
-                        raise Exception('Multiple windows accepting line input')
-                    self.lineinputwin = input.get('id')
-                if input.get('type') == 'char':
-                    if self.charinputwin:
-                        raise Exception('Multiple windows accepting char input')
-                    self.charinputwin = input.get('id')
-                if input.get('hyperlink'):
-                    self.hyperlinkinputwin = input.get('id')
 
 
 class ObjPrint:
@@ -564,79 +471,29 @@ def escape_html(val, lastspan=False):
             res.append('&nbsp;' * (spaces-1))
     return ''.join(res)
 
-def write_html(ifid, gamefile, statuswin, storywin, dirpath):
+def write_contents(ifid, gamefile, dirpath):
     fl = open(os.path.join(dirpath, 'contents'), 'w')
     fl.write('IFID: %s\n' % (ifid,))
     fl.write('file: %s\n' % (os.path.abspath(gamefile),))
     fl.write('created: %s\n' % (datetime.datetime.now(),))
     fl.close()
     
-    fl = open(os.path.join(dirpath, 'screen.json'), 'w')
-    fl.write('{\n')
-    fl.write(' "status": {\n')
-    fl.write('  "lines": [\n')
-    for ix in range(len(statuswin)):
-        line = statuswin[ix]
-        line = line[-1] ###
-        line = [ '{"text": %s, "style": %s}' % (escape_json(span.get('text', '')), escape_json(span.get('style', 'normal'))) for span in line ]
-        line = '[' + ', '.join(line) + ']'
-        comma = '' if (ix+1 == len(statuswin)) else ','
-        fl.write('   { "line": %d, "content": %s }%s\n' % (ix, line, comma))
-    fl.write('  ] },\n')
-    fl.write(' "story": {\n')
-    fl.write('  "text": [\n')
-    for ix in range(len(storywin)):
-        line = storywin[ix]
-        line = line[-1] ###
-        line = [ '{"text": %s, "style": %s}' % (escape_json(span.get('text', '')), escape_json(span.get('style', 'normal'))) for span in line ]
-        line = '[' + ', '.join(line) + ']'
-        comma = '' if (ix+1 == len(storywin)) else ','
-        fl.write('   { "content": %s }%s\n' % (line, comma))
-    fl.write('  ] }\n')
-    fl.write('}\n')
-    fl.close()
-    
-    fl = open(os.path.join(dirpath, 'screen.html'), 'w')
+def write_html(ifid, gamefile, state, dirpath, fileindex=None):
+    filename = 'screen.html'
+    if fileindex is not None:
+        filename = 'screen-%d.html' % (fileindex,)
+    fl = open(os.path.join(dirpath, filename), 'w')
 
     fl.write('<!doctype HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">\n')
     fl.write('<html>\n')
     fl.write('<head>\n')
-    fl.write('<title>Game Dump</title>\n')
+    fl.write('<title>Game Dump</title>\n') ### use title from metadata
     fl.write('<style type="text/css">\n')
     fl.write(styleblock)
     fl.write('</style>\n')
     fl.write('</head>\n')
     fl.write('<body>\n')
-    fl.write('<div class="StatusWindow">\n')
-    for line in statuswin:
-        line = line[-1] ###
-        fl.write('<div class="StatusLine">')
-        spans = len(line)
-        if spans == 0:
-            fl.write('&nbsp;')
-        else:
-            for ix in range(spans):
-                span = line[ix]
-                spantext = span.get('text', '')
-                spanstyle = span.get('style', 'normal')
-                islast = (ix+1 == spans)
-                fl.write('<span class="Style_%s">%s</span>' % (spanstyle, escape_html(spantext, islast)))
-        fl.write('</div>\n')
-    fl.write('</div>\n')
-    for line in storywin:
-        line = line[-1] ###
-        fl.write('<div class="StoryPara">')
-        spans = len(line)
-        if spans == 0:
-            fl.write('&nbsp;')
-        else:
-            for ix in range(spans):
-                span = line[ix]
-                spantext = span.get('text', '')
-                spanstyle = span.get('style', 'normal')
-                islast = (ix+1 == spans)
-                fl.write('<span class="Style_%s">%s</span>' % (spanstyle, escape_html(spantext)))
-        fl.write('</div>\n')
+    ###
     fl.write('</body>\n')
     fl.write('</html>\n')
 
@@ -754,14 +611,20 @@ def run(gamefile):
         return
     
     try:
+        write_contents(ifid, gamefile, dirpath=dir)
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
     
         gamestate.initialize()
         gamestate.accept_output()
+        outindex = 0
+        val = len(cmdlist) - outindex
+        write_html(ifid, gamefile, gamestate, dirpath=dir, fileindex=(outindex if outindex else None))
         for cmd in cmdlist:
             gamestate.perform_input(cmd)
             gamestate.accept_output()
-        write_html(ifid, gamefile, gamestate.statuswindat, gamestate.storywindat, dirpath=dir)
+            outindex += 1
+            val = len(cmdlist) - outindex
+            write_html(ifid, gamefile, gamestate, dirpath=dir, fileindex=(outindex if outindex else None))
         print('%s: (IFID %s): done' % (gamefile, ifid))
     except Exception as ex:
         print('%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex))
