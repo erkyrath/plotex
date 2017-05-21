@@ -1,3 +1,13 @@
+# IF-o-Matic: run IF games, record HTML screenshots.
+#   Andrew Plotkin <erkyrath@eblong.com>
+
+# This uses the same crude model as regtest.py, because it's built on
+# the guts of regtest.py. It only understands a single story window
+# and a single status window, and it's not really clear about how
+# those are updated across multiple turns, either. The whole thing should
+# be ripped out and replaced by a glkote-compatible screen-state updater.
+
+
 # We use the print() function for Python 2/3 compatibility
 from __future__ import print_function
 
