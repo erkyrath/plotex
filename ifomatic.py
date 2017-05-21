@@ -141,24 +141,58 @@ class GameState:
 class GameStateRemGlk(GameState):
     """Wrapper for a RemGlk-based interpreter. This can in theory handle
     any I/O supported by Glk. But the current implementation is limited
-    to line and char input, and no more than one status (grid) window.
-    Multiple story (buffer) windows are accepted, but their output for
-    a given turn is agglomerated.
+    to line and char input, and no more than one status (grid) and one
+    graphics window. Multiple story (buffer) windows are accepted, but
+    their output for a given turn is agglomerated.
     """
 
+    @staticmethod
+    def extract_text(line):
+        # Extract the text from a line object, ignoring styles.
+        con = line.get('content')
+        if not con:
+            return ''
+        dat = [ val.get('text', '') for val in con ]
+        return ''.join(dat)
+    
+    @staticmethod
+    def extract_raw(line):
+        # Extract the content array from a line object.
+        con = line.get('content')
+        if not con:
+            return []
+        return con
+
+    @staticmethod
+    def create_metrics(width=None, height=None):
+        if not width:
+            width = 800
+        if not height:
+            height = 480
+        res = {
+            'width':width, 'height':height,
+            'gridcharwidth':10, 'gridcharheight':12,
+            'buffercharwidth':10, 'buffercharheight':12,
+        }
+        return res
+    
     def initialize(self):
         import json
         update = { 'type':'init', 'gen':0,
-                   'metrics': { 'width':80, 'height':40 },
+                   'metrics': GameStateRemGlk.create_metrics(),
+                   'support': [ 'timer', 'hyperlinks', 'graphics', 'graphicswin' ],
                    }
         cmd = json.dumps(update)
-        self.infile.write(cmd+'\n')
+        self.infile.write((cmd+'\n').encode())
         self.infile.flush()
         self.generation = 0
         self.windows = {}
+        # This doesn't track multiple-window input the way it should,
+        # nor distinguish hyperlink input state across multiple windows.
         self.lineinputwin = None
         self.charinputwin = None
         self.specialinput = None
+        self.hyperlinkinputwin = None
         
     def perform_input(self, cmd):
         import json
@@ -178,45 +212,76 @@ class GameStateRemGlk(GameState):
             update = { 'type':'char', 'gen':self.generation,
                        'window':self.charinputwin, 'value':val
                        }
+        elif cmd.type == 'hyperlink':
+            if not self.hyperlinkinputwin:
+                raise Exception('Game is not expecting hyperlink input')
+            update = { 'type':'hyperlink', 'gen':self.generation,
+                       'window':self.hyperlinkinputwin, 'value':cmd.cmd
+                       }
+        elif cmd.type == 'timer':
+            update = { 'type':'timer', 'gen':self.generation }
+        elif cmd.type == 'arrange':
+            update = { 'type':'arrange', 'gen':self.generation,
+                       'metrics': GameStateRemGlk.create_metrics(cmd.width, cmd.height)
+                       }
+        elif cmd.type == 'refresh':
+            update = { 'type':'refresh', 'gen':0 }
         elif cmd.type == 'fileref_prompt':
             if self.specialinput != 'fileref_prompt':
                 raise Exception('Game is not expecting a fileref_prompt')
             update = { 'type':'specialresponse', 'gen':self.generation,
                        'response':'fileref_prompt', 'value':cmd.cmd
                        }
+        elif cmd.type == 'debug':
+            update = { 'type':'debuginput', 'gen':self.generation,
+                       'value':cmd.cmd
+                       }
         else:
             raise Exception('Rem mode does not recognize command type: %s' % (cmd.type))
+        if opts.verbose >= 2:
+            ObjPrint.pprint(update)
+            print()
         cmd = json.dumps(update)
-        self.infile.write(cmd+'\n')
+        self.infile.write((cmd+'\n').encode())
         self.infile.flush()
         
     def accept_output(self):
         import json
-        output = []
+        output = bytearray()
         update = None
 
-        # Read until a complete JSON object comes through the pipe.
+        timeout_time = time.time() + opts.timeout_secs
+
+        # Read until a complete JSON object comes through the pipe (or
+        # we time out).
         # We sneakily rely on the fact that RemGlk always uses dicts
         # as the JSON object, so it always ends with "}".
-        while (select.select([self.outfile],[],[])[0] != []):
+        while (select.select([self.outfile],[],[],opts.timeout_secs)[0] != []):
             ch = self.outfile.read(1)
-            if ch == '':
+            if ch == b'':
                 # End of stream. Hopefully we have a valid object.
-                dat = ''.join(output)
+                dat = output.decode('utf-8')
                 update = json.loads(dat)
                 break
-            output.append(ch)
-            if (output[-1] == '}'):
+            output += ch
+            if (output[-1] == ord('}')):
                 # Test and see if we have a valid object.
-                dat = ''.join(output)
+                dat = output.decode('utf-8')
                 try:
                     update = json.loads(dat)
                     break
                 except:
                     pass
+                
+        if time.time() >= timeout_time:
+            raise Exception('Timed out awaiting output')
 
         # Parse the update object. This is complicated. For the format,
         # see http://eblong.com/zarf/glk/glkote/docs.html
+
+        if opts.verbose >= 2:
+            ObjPrint.pprint(update)
+            print()
 
         self.generation = update.get('gen')
 
@@ -226,18 +291,22 @@ class GameStateRemGlk(GameState):
             for win in windows:
                 id = win.get('id')
                 self.windows[id] = win
+            
             grids = [ win for win in self.windows.values() if win.get('type') == 'grid' ]
             if len(grids) > 1:
                 raise Exception('Cannot handle more than one grid window')
             if not grids:
                 self.statuswin = []
+                self.statuswindat = []
             else:
                 win = grids[0]
                 height = win.get('gridheight', 0)
                 if height < len(self.statuswin):
                     self.statuswin = self.statuswin[0:height]
+                    self.statuswindat = self.statuswindat[0:height]
                 while height > len(self.statuswin):
                     self.statuswin.append('')
+                    self.statuswindat.append([])
 
         contents = update.get('content')
         if contents is not None:
@@ -247,25 +316,40 @@ class GameStateRemGlk(GameState):
                 if not win:
                     raise Exception('No such window')
                 if win.get('type') == 'buffer':
+                    self.storywin = []
+                    self.storywindat = []
                     text = content.get('text')
                     if text:
                         for line in text:
-                            datls = line.get('content')
-                            if not datls:
-                                datls = []
+                            dat = self.extract_text(line)
+                            if (opts.verbose == 1):
+                                if (dat != '>'):
+                                    print(dat)
                             if line.get('append') and len(self.storywin):
-                                self.storywin[-1] += datls
+                                self.storywin[-1] += dat
                             else:
-                                self.storywin.append(datls)
+                                self.storywin.append(dat)
+                            dat = self.extract_raw(line)
+                            if line.get('append') and len(self.storywindat):
+                                self.storywindat[-1].append(dat)
+                            else:
+                                self.storywindat.append([dat])
                 elif win.get('type') == 'grid':
                     lines = content.get('lines')
                     for line in lines:
                         linenum = line.get('line')
-                        datls = line.get('content')
-                        if not datls:
-                            datls = []
+                        dat = self.extract_text(line)
                         if linenum >= 0 and linenum < len(self.statuswin):
-                            self.statuswin[linenum] = datls
+                            self.statuswin[linenum] = dat
+                        dat = self.extract_raw(line)
+                        if linenum >= 0 and linenum < len(self.statuswindat):
+                            self.statuswindat[linenum].append(dat)
+                elif win.get('type') == 'graphics':
+                    self.graphicswin = []
+                    self.graphicswindat = []
+                    draw = content.get('draw')
+                    if draw:
+                        self.graphicswindat.append([draw])
 
         inputs = update.get('input')
         specialinputs = update.get('specialinput')
@@ -273,10 +357,12 @@ class GameStateRemGlk(GameState):
             self.specialinput = specialinputs.get('type')
             self.lineinputwin = None
             self.charinputwin = None
+            self.hyperlinkinputwin = None
         elif inputs is not None:
             self.specialinput = None
             self.lineinputwin = None
             self.charinputwin = None
+            self.hyperlinkinputwin = None
             for input in inputs:
                 if input.get('type') == 'line':
                     if self.lineinputwin:
@@ -286,6 +372,119 @@ class GameStateRemGlk(GameState):
                     if self.charinputwin:
                         raise Exception('Multiple windows accepting char input')
                     self.charinputwin = input.get('id')
+                if input.get('hyperlink'):
+                    self.hyperlinkinputwin = input.get('id')
+
+
+class ObjPrint:
+    NoneType = type(None)
+    try:
+        UnicodeType = unicode
+    except:
+        UnicodeType = str
+    
+    @staticmethod
+    def pprint(obj):
+        printer = ObjPrint()
+        printer.printval(obj, depth=0)
+        print(''.join(printer.arr))
+    
+    def __init__(self):
+        self.arr = []
+
+    @staticmethod
+    def valislong(val):
+        typ = type(val)
+        if typ is ObjPrint.NoneType:
+            return False
+        elif typ is bool or typ is int or typ is float:
+            return False
+        elif typ is str or typ is ObjPrint.UnicodeType:
+            return (len(val) > 16)
+        elif typ is list or typ is dict:
+            return (len(val) > 0)
+        else:
+            return True
+
+    def printval(self, val, depth=0):
+        typ = type(val)
+        
+        if typ is ObjPrint.NoneType:
+            self.arr.append('None')
+        elif typ is bool or typ is int or typ is float:
+            self.arr.append(str(val))
+        elif typ is str:
+            self.arr.append(repr(val))
+        elif typ is ObjPrint.UnicodeType:
+            st = repr(val)
+            if st.startswith('u'):
+                st = st[1:]
+            self.arr.append(st)
+        elif typ is list:
+            if len(val) == 0:
+                self.arr.append('[]')
+            else:
+                anylong = False
+                for subval in val:
+                    if ObjPrint.valislong(subval):
+                        anylong = True
+                        break
+                self.arr.append('[')
+                if anylong:
+                    self.arr.append('\n')
+                first = True
+                for subval in val:
+                    if first:
+                        if anylong:
+                            self.arr.append((depth+1)*'  ')
+                    else:
+                        if anylong:
+                            self.arr.append(',\n')
+                            self.arr.append((depth+1)*'  ')
+                        else:
+                            self.arr.append(', ')
+                    self.printval(subval, depth+1)
+                    first = False
+                if anylong:
+                    self.arr.append('\n')
+                    self.arr.append(depth*'  ')
+                self.arr.append(']')
+        elif typ is dict:
+            if len(val) == 0:
+                self.arr.append('{}')
+            else:
+                anylong = False
+                for subval in val.values():
+                    if ObjPrint.valislong(subval):
+                        anylong = True
+                        break
+                self.arr.append('{')
+                if anylong:
+                    self.arr.append('\n')
+                first = True
+                keyls = sorted(val.keys())
+                for subkey in keyls:
+                    subval = val[subkey]
+                    if first:
+                        if anylong:
+                            self.arr.append((depth+1)*'  ')
+                    else:
+                        if anylong:
+                            self.arr.append(',\n')
+                            self.arr.append((depth+1)*'  ')
+                        else:
+                            self.arr.append(', ')
+                    self.printval(subkey, depth+1)
+                    self.arr.append(':')
+                    self.printval(subval, depth+1)
+                    first = False
+                if anylong:
+                    self.arr.append('\n')
+                    self.arr.append(depth*'  ')
+                self.arr.append('}')
+        else:
+            raise Exception('unknown type: %r' % (val,))
+
 
 def escape_json(val):
     res = ['"']
