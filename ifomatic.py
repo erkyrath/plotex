@@ -567,6 +567,7 @@ def write_html(ifid, gamefile, statuswin, storywin, dirpath):
     fl.write('  "lines": [\n')
     for ix in range(len(statuswin)):
         line = statuswin[ix]
+        line = line[-1] ###
         line = [ '{"text": %s, "style": %s}' % (escape_json(span.get('text', '')), escape_json(span.get('style', 'normal'))) for span in line ]
         line = '[' + ', '.join(line) + ']'
         comma = '' if (ix+1 == len(statuswin)) else ','
@@ -576,6 +577,7 @@ def write_html(ifid, gamefile, statuswin, storywin, dirpath):
     fl.write('  "text": [\n')
     for ix in range(len(storywin)):
         line = storywin[ix]
+        line = line[-1] ###
         line = [ '{"text": %s, "style": %s}' % (escape_json(span.get('text', '')), escape_json(span.get('style', 'normal'))) for span in line ]
         line = '[' + ', '.join(line) + ']'
         comma = '' if (ix+1 == len(storywin)) else ','
@@ -597,6 +599,7 @@ def write_html(ifid, gamefile, statuswin, storywin, dirpath):
     fl.write('<body>\n')
     fl.write('<div class="StatusWindow">\n')
     for line in statuswin:
+        line = line[-1] ###
         fl.write('<div class="StatusLine">')
         spans = len(line)
         if spans == 0:
@@ -611,6 +614,7 @@ def write_html(ifid, gamefile, statuswin, storywin, dirpath):
         fl.write('</div>\n')
     fl.write('</div>\n')
     for line in storywin:
+        line = line[-1] ###
         fl.write('<div class="StoryPara">')
         spans = len(line)
         if spans == 0:
@@ -731,6 +735,7 @@ def run(gamefile):
 
     try:
         proc = subprocess.Popen(args,
+                                bufsize=0,
                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     except Exception as ex:
         print('%s: unable to launch interpreter: %s: %s' % (gamefile, ex.__class__.__name__, ex))
@@ -744,7 +749,7 @@ def run(gamefile):
         for cmd in cmdlist:
             gamestate.perform_input(cmd)
             gamestate.accept_output()
-        write_html(ifid, gamefile, gamestate.statuswin, gamestate.storywin, dirpath=dir)
+        write_html(ifid, gamefile, gamestate.statuswindat, gamestate.storywindat, dirpath=dir)
         print('%s: (IFID %s): done' % (gamefile, ifid))
     except Exception as ex:
         print('%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex))
