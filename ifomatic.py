@@ -137,6 +137,27 @@ class Command:
     def __repr__(self):
         return '<Command "%s">' % (self.cmd,)
 
+class GlkWindow:
+    def __init__(self, id, type, rock):
+        self.id = id
+        self.type = type
+        self.rock = rock
+
+        self.gridheight = None
+        self.gridwidth = None
+        self.gridlines = None
+        if self.type == 'grid':
+            self.gridheight = 0
+            self.gridwidth = 0
+            self.gridlines = []
+        self.input = None
+        self.terminators = {}
+        self.reqhyperlink = False
+        self.reqmouse = False
+
+    def __repr__(self):
+        return '<GlkWindow %d (%s, rock=%d)>' % (self.id, self.type, self.rock)
+    
 class GameState:
     """The GameState class wraps the connection to the interpreter subprocess
     (the pipe in and out streams). It's responsible for sending commands
@@ -211,7 +232,7 @@ class GameStateRemGlk(GameState):
         self.infile.write((cmd+'\n').encode())
         self.infile.flush()
         self.generation = 0
-        self.windows = {}
+        self.windowdic = {}
         
     def perform_input(self, cmd):
         if cmd.type == 'line':
@@ -260,7 +281,6 @@ class GameStateRemGlk(GameState):
         self.infile.flush()
         
     def accept_output(self):
-        import json
         output = bytearray()
         update = None
 
@@ -304,23 +324,54 @@ class GameStateRemGlk(GameState):
 
         windows = update.get('windows')
         if windows is not None:
-            self.windows = {}
+            # Handle all the window changes. The argument lists all windows
+            # that should be open. Any unlisted windows, therefore, get
+            # closed.
+            # (If the update has no windows entry, we make no window changes.)
+            for win in self.windowdic.values():
+                win.inplace = False
             for win in windows:
-                id = win.get('id')
-                self.windows[id] = win
+                self.accept_one_window(win)
+            closewins = [ win for win in self.windowdic.values() if not win.inplace ]
+            for win in closewins:
+                del self.windowdic[win.id]
 
         contents = update.get('content')
         if contents is not None:
             for content in contents:
                 id = content.get('id')
-                win = self.windows.get(id)
+                win = self.windowdic.get(id)
                 if not win:
                     raise Exception('No such window')
-                pass
+                pass ###
 
         inputs = update.get('input')
         specialinputs = update.get('specialinput')
 
+    def accept_one_window(self, arg):
+        argid = arg['id']
+        win = self.windowdic.get(argid)
+        if win is None:
+            # The window must be created.
+            win = GlkWindow(argid, arg['type'], arg['rock'])
+            self.windowdic[argid] = win
+
+        win.inplace = True
+        
+        if win.type == 'grid':
+            # Make sure we have the correct number of lines.
+            argheight = arg['gridheight']
+            argwidth = arg['gridwidth']
+            if argheight > win.gridheight:
+                for ix in range(win.gridheight, argheight):
+                    win.gridlines.append([]) ###?
+            if argheight < win.gridheight:
+                del win.gridlines[ argheight : ]
+            win.gridheight = argheight
+            win.gridwidth = argwidth
+                    
+        if win.type == 'graphics':
+            pass  ### set up array
 
 class ObjPrint:
     NoneType = type(None)
@@ -639,6 +690,7 @@ def run(gamefile):
         print('%s: (IFID %s): done' % (gamefile, ifid))
     except Exception as ex:
         print('%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex))
+        raise ###
 
     if tracefile:
         tracefile.close()
