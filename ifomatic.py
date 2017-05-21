@@ -322,6 +322,8 @@ class GameStateRemGlk(GameState):
 
         self.generation = update.get('gen')
 
+        ### inputcancel
+
         windows = update.get('windows')
         if windows is not None:
             # Handle all the window changes. The argument lists all windows
@@ -339,14 +341,11 @@ class GameStateRemGlk(GameState):
         contents = update.get('content')
         if contents is not None:
             for content in contents:
-                id = content.get('id')
-                win = self.windowdic.get(id)
-                if not win:
-                    raise Exception('No such window')
-                pass ###
+                self.accept_one_content(content)
 
         inputs = update.get('input')
         specialinputs = update.get('specialinput')
+        ###
 
     def accept_one_window(self, arg):
         argid = arg['id']
@@ -372,6 +371,42 @@ class GameStateRemGlk(GameState):
                     
         if win.type == 'graphics':
             pass  ### set up array
+
+    def accept_one_content(self, arg):
+        id = arg.get('id')
+        win = self.windowdic.get(id)
+        if not win:
+            raise Exception('No such window')
+
+        if win.input and win.input.type == 'line':
+            raise Exception('Window is awaiting line input.')
+
+        if win.type == 'grid':
+            # Modify the given lines of the grid window
+            for (ix, linearg) in enumerate(arg['lines']):
+                linenum = linearg['line']
+                linels = win.gridlines[linenum]
+                linels.clear()
+                content = linearg.get('content')
+                if content:
+                    sx = 0
+                    while sx < len(content):
+                        rdesc = content[sx]
+                        sx += 1
+                        if type(rdesc) is dict:
+                            if rdesc.get('special') is not None:
+                                continue
+                            rstyle = rdesc['style']
+                            rtext = rdesc['text']
+                            rlink = rdesc.get('hyperlink')
+                        else:
+                            rstyle = rdesc
+                            rtext = content[sx]
+                            sx += 1
+                            rlink = None
+                        el = (rstyle, rtext, rlink)
+                        linels.append(el)
+            print('###', win, win.gridlines)
 
 class ObjPrint:
     NoneType = type(None)
