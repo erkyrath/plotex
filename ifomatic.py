@@ -150,9 +150,10 @@ class GameState:
     This is a virtual base class. Subclasses should customize the
     initialize, perform_input, and accept_output methods.
     """
-    def __init__(self, infile, outfile):
+    def __init__(self, infile, outfile, tracefile=None):
         self.infile = infile
         self.outfile = outfile
+        self.tracefile = tracefile
 
     def initialize(self):
         pass
@@ -251,6 +252,9 @@ class GameStateRemGlk(GameState):
         if opts.verbose >= 2:
             ObjPrint.pprint(update)
             print()
+        if self.tracefile:
+            json.dump(update, self.tracefile, indent=2, sort_keys=True)
+            self.tracefile.write('\n\n')
         cmd = json.dumps(update)
         self.infile.write((cmd+'\n').encode())
         self.infile.flush()
@@ -292,6 +296,9 @@ class GameStateRemGlk(GameState):
         if opts.verbose >= 2:
             ObjPrint.pprint(update)
             print()
+        if self.tracefile:
+            json.dump(update, self.tracefile, indent=2, sort_keys=True)
+            self.tracefile.write('\n\n')
 
         self.generation = update.get('gen')
 
@@ -609,10 +616,14 @@ def run(gamefile):
     except Exception as ex:
         print('%s: unable to launch interpreter: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
+
+    tracefile = None
     
     try:
         write_contents(ifid, gamefile, dirpath=dir)
-        gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
+        
+        tracefile = open(os.path.join(dir, 'trace.json'), 'w')
+        gamestate = GameStateRemGlk(proc.stdin, proc.stdout, tracefile)
     
         gamestate.initialize()
         gamestate.accept_output()
@@ -628,7 +639,9 @@ def run(gamefile):
         print('%s: (IFID %s): done' % (gamefile, ifid))
     except Exception as ex:
         print('%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex))
-    
+
+    if tracefile:
+        tracefile.close()
     gamestate = None
     proc.stdin.close()
     proc.stdout.close()
