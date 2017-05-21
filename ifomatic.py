@@ -638,6 +638,7 @@ re_formatline = re.compile('^Format: ([A-Za-z0-9 _-]+)$')
 
 def get_ifid(file):
     res = subprocess.check_output([opts.babel, '-ifid', file])
+    res = res.decode('utf-8')
     res = res.strip()
     match = re_ifidline.match(res)
     if match:
@@ -646,6 +647,7 @@ def get_ifid(file):
 
 def get_format(file):
     res = subprocess.check_output([opts.babel, '-format', file])
+    res = res.decode('utf-8')
     res = res.strip()
     match = re_formatline.match(res)
     if match:
