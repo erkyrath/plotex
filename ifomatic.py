@@ -336,7 +336,8 @@ class GameStateRemGlk(GameState):
 
         self.generation = update.get('gen')
 
-        ### inputcancel
+        inputs = update.get('input')
+        self.accept_inputcancel(inputs)
 
         windows = update.get('windows')
         if windows is not None:
@@ -357,10 +358,54 @@ class GameStateRemGlk(GameState):
             for content in contents:
                 self.accept_one_content(content)
 
-        inputs = update.get('input')
-        specialinputs = update.get('specialinput')
-        ###
+        self.accept_inputset(inputs)
 
+        ###specialinputs = update.get('specialinput')
+        ###timer = update.get('timer')
+
+    def accept_inputcancel(self, arg):
+        if arg is None:
+            return
+        
+        hasinput = {}
+        for argi in arg:
+            if argi.get('type'):
+                hasinput[argi['id']] = argi
+                
+        for (winid, win) in self.windowdic.items():
+            if win.input:
+                argi = hasinput[winid]
+                if (argi is None) or (argi['gen'] > win.input.gen):
+                    # cancel this input.
+                    win.input = None
+
+    def accept_inputset(self, arg):
+        if arg is None:
+            return
+        
+        hasinput = {}
+        hashyperlink = {}
+        hasmouse = {}
+        for argi in arg:
+            id = argi['id']
+            if argi.get('type'):
+                hasinput[id] = argi
+            if argi.get('hyperlink'):
+                hashyperlink[id] = True
+            if argi.get('mouse'):
+                hasmouse[id] = True
+        
+        for (winid, win) in self.windowdic.items():
+            win.reqhyperlink = hashyperlink.get(winid)
+            win.reqmouse = hasmouse.get(winid)
+
+            argi = hasinput.get(winid)
+            if argi is None:
+                continue
+            win.input = argi
+
+            ### initial, terminators
+            
     def accept_one_window(self, arg):
         argid = arg['id']
         win = self.windowdic.get(argid)
