@@ -143,6 +143,7 @@ class GlkWindow:
         self.type = type
         self.rock = rock
 
+        self.buflines = None
         self.gridheight = None
         self.gridwidth = None
         self.gridlines = None
@@ -150,6 +151,8 @@ class GlkWindow:
             self.gridheight = 0
             self.gridwidth = 0
             self.gridlines = []
+        if self.type == 'buffer':
+            self.buflines = []
         self.input = None
         self.terminators = {}
         self.reqhyperlink = False
@@ -157,6 +160,17 @@ class GlkWindow:
 
     def __repr__(self):
         return '<GlkWindow %d (%s, rock=%d)>' % (self.id, self.type, self.rock)
+
+class GlkBufferLine:
+    def __init__(self):
+        self.ls = []
+        self.flowbreak = False
+
+    def __repr__(self):
+        return repr(self.ls)
+
+    def append(self, val):
+        self.ls.append(val)
     
 class GameState:
     """The GameState class wraps the connection to the interpreter subprocess
@@ -407,6 +421,60 @@ class GameStateRemGlk(GameState):
                         el = (rstyle, rtext, rlink)
                         linels.append(el)
             print('###', win, win.gridlines)
+
+        if win.type == 'buffer':
+            # Append the given lines onto the end of the buffer window
+            text = arg.get('text', [])
+
+            if arg.get('clear'):
+                win.buflines.clear()
+
+            # Each line we receive has a flag indicating whether it *starts*
+            # a new paragraph. (If the flag is false, the line gets appended
+            # to the previous paragraph.)
+                
+            for textarg in text:
+                content = textarg.get('content')
+                linels = None
+                if textarg.get('append'):
+                    if content is None or not len(content):
+                        continue
+                    if len(win.buflines):
+                        linels = win.buflines[-1]
+                if linels is None:
+                    linels = GlkBufferLine()
+                    win.buflines.append(linels)
+                if textarg.get('flowbreak'):
+                    divel.flowbreak = True
+                    
+                if content is None or not len(content):
+                    continue
+                
+                sx = 0
+                while sx < len(content):
+                    rdesc = content[sx]
+                    sx += 1
+                    if type(rdesc) is dict:
+                        if rdesc.get('special') is not None:
+                            ### images
+                            continue
+                        rstyle = rdesc['style']
+                        rtext = rdesc['text']
+                        rlink = rdesc.get('hyperlink')
+                    else:
+                        rstyle = rdesc
+                        rtext = content[sx]
+                        sx += 1
+                        rlink = None
+                    el = (rstyle, rtext, rlink)
+                    linels.append(el)
+                        
+            ### trim the scrollback
+            print('###', win, win.buflines)
+                    
+        if win.type == 'graphics':
+            draw = arg.get('draw', [])
+            pass ###
 
 class ObjPrint:
     NoneType = type(None)
