@@ -161,6 +161,17 @@ class GlkWindow:
     def __repr__(self):
         return '<GlkWindow %d (%s, rock=%d)>' % (self.id, self.type, self.rock)
 
+class GlkWindowInput:
+    def __init__(self, arg):
+        self.id = arg.get('id')
+        self.type = arg.get('type')
+        self.gen = arg.get('gen')
+        if self.type == 'line':
+            self.maxlen = arg.get('maxlen', 1)
+            ### initial, terminators
+        if self.type == 'grid':
+            pass ### xpos, ypos
+        
 class GlkBufferLine:
     def __init__(self):
         self.ls = []
@@ -250,15 +261,23 @@ class GameStateRemGlk(GameState):
         
     def perform_input(self, cmd):
         if cmd.type == 'line':
+            ls = [ winid for (winid, win) in self.windowdic.items()
+                   if win.input and win.input.type == 'line' ]
+            if not ls:
+                raise Exception('No window is awaiting line input')
             update = { 'type':'line', 'gen':self.generation,
-                       'window':'###', 'value':cmd.cmd
+                       'window':min(ls), 'value':cmd.cmd
                        }
         elif cmd.type == 'char':
+            ls = [ winid for (winid, win) in self.windowdic.items()
+                   if win.input and win.input.type == 'char' ]
+            if not ls:
+                raise Exception('No window is awaiting char input')
             val = cmd.cmd
             if val == '\n':
                 val = 'return'
             update = { 'type':'char', 'gen':self.generation,
-                       'window':'###', 'value':val
+                       'window':min(ls), 'value':val
                        }
         elif cmd.type == 'hyperlink':
             update = { 'type':'hyperlink', 'gen':self.generation,
@@ -273,7 +292,7 @@ class GameStateRemGlk(GameState):
         elif cmd.type == 'refresh':
             update = { 'type':'refresh', 'gen':0 }
         elif cmd.type == 'fileref_prompt':
-            if self.specialinput != 'fileref_prompt':
+            if self.specialinput != 'fileref_prompt': ###?
                 raise Exception('Game is not expecting a fileref_prompt')
             update = { 'type':'specialresponse', 'gen':self.generation,
                        'response':'fileref_prompt', 'value':cmd.cmd
@@ -402,7 +421,7 @@ class GameStateRemGlk(GameState):
             argi = hasinput.get(winid)
             if argi is None:
                 continue
-            win.input = argi
+            win.input = GlkWindowInput(argi)
 
             ### initial, terminators
             
