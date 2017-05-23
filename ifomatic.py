@@ -393,7 +393,7 @@ class GameStateRemGlk(GameState):
                 
         for (winid, win) in self.windowdic.items():
             if win.input:
-                argi = hasinput[winid]
+                argi = hasinput.get('winid')
                 if (argi is None) or (argi['gen'] > win.input.gen):
                     # cancel this input.
                     win.input = None
