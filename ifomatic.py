@@ -7,11 +7,13 @@
 #
 #   python3 ifomatic.py GAME
 #
-# You must have the babel command-line tool in your path.
+# This launches the game and writes the initial display state to
+# screenshots/IFID/screen.html (where IFID is the game's IFID).
 #
-# You must also have an appropriate interpreter compiled with the RemGlk
-# library in your path. Currently the script assumes these are called
-# "glulxer" and "fizmo-rem", which are idiosyncratic names I use -- sorry.
+# You must have the babel command-line tool in your path. You must also
+# have an appropriate interpreter compiled with the RemGlk library in
+# your path. Currently the script assumes these are called "glulxer" and
+# "fizmo-rem", which are idiosyncratic names I use -- sorry.
 #
 # In its current state, this records the window state of all text windows
 # (grid and buffer), but does not track their size or arrangement. The
