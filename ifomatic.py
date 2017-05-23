@@ -316,7 +316,7 @@ class GameStateRemGlk(GameState):
                        }
         else:
             raise Exception('Command type not recognized: %s' % (cmd.type))
-        if opts.verbose >= 2:
+        if opts.verbose:
             ObjPrint.pprint(update)
             print()
         if self.tracefile:
@@ -359,7 +359,7 @@ class GameStateRemGlk(GameState):
         # Parse the update object. This is complicated. For the format,
         # see http://eblong.com/zarf/glk/glkote/docs.html
 
-        if opts.verbose >= 2:
+        if opts.verbose:
             ObjPrint.pprint(update)
             print()
         if self.tracefile:
