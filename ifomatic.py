@@ -664,17 +664,9 @@ def escape_json(val):
     res.append('"')
     return ''.join(res)
 
-def escape_html(val, lastspan=False):
+def escape_html(val):
     res = []
-    spaces = 0
     for ch in val:
-        if ch == ' ':
-            spaces += 1
-            continue
-        if spaces > 0:
-            res.append('&nbsp;' * (spaces-1))
-            res.append(' ')
-            spaces = 0
         if ch == '&':
             res.append('&amp;')
         elif ch == '>':
@@ -687,13 +679,6 @@ def escape_html(val, lastspan=False):
                 res.append(chr(och))
             else:
                 res.append('&#'+str(och)+';')
-    if spaces > 0:
-        if not lastspan:
-            res.append('&nbsp;' * (spaces-1))
-            res.append(' ')
-        else:
-            res.append(' ')
-            res.append('&nbsp;' * (spaces-1))
     return ''.join(res)
 
 def write_contents(ifid, gamefile, dirpath):
@@ -718,7 +703,21 @@ def write_html(ifid, gamefile, state, dirpath, fileindex=None):
     fl.write('</style>\n')
     fl.write('</head>\n')
     fl.write('<body>\n')
-    ###
+
+    winls = list(state.windowdic.values())
+    winls.sort(key=lambda win:(win.type), reverse=True)
+
+    for win in winls:
+        if win.type == 'grid':
+            fl.write('<div class="StatusWindow">\n')
+            for line in win.gridlines:
+                fl.write('<div class="StatusLine">')
+                for span in line:
+                    (rstyle, rtext, rlink) = span
+                    fl.write('<span class="Style_%s">%s</span>' % (rstyle, escape_html(rtext)))
+                fl.write('</div>\n')
+            fl.write('</div>\n')
+
     fl.write('</body>\n')
     fl.write('</html>\n')
 
@@ -847,13 +846,13 @@ def run(gamefile):
         gamestate.accept_output()
         outindex = 0
         val = len(cmdlist) - outindex
-        write_html(ifid, gamefile, gamestate, dirpath=dir, fileindex=(outindex if outindex else None))
+        write_html(ifid, gamefile, gamestate, dirpath=dir, fileindex=(outindex if val else None))
         for cmd in cmdlist:
             gamestate.perform_input(cmd)
             gamestate.accept_output()
             outindex += 1
             val = len(cmdlist) - outindex
-            write_html(ifid, gamefile, gamestate, dirpath=dir, fileindex=(outindex if outindex else None))
+            write_html(ifid, gamefile, gamestate, dirpath=dir, fileindex=(outindex if val else None))
         print('%s: (IFID %s): done' % (gamefile, ifid))
     except Exception as ex:
         print('%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex))
