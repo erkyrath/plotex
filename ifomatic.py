@@ -3,6 +3,16 @@
 #   Andrew Plotkin <erkyrath@eblong.com>
 #   This script is in the public domain.
 
+# To use:
+#
+#   python3 ifomatic.py GAME
+#
+# You must have the babel command-line tool in your path.
+#
+# You must also have an appropriate interpreter compiled with the RemGlk
+# library in your path. Currently the script assumes these are called
+# "glulxer" and "fizmo-rem", which are idiosyncratic names I use -- sorry.
+#
 # In its current state, this records the window state of all text windows
 # (grid and buffer), but does not track their size or arrangement. The
 # HTML output just shows all the windows, one after another, down the page.
@@ -487,7 +497,7 @@ class GameStateRemGlk(GameState):
                             rlink = None
                         el = (rstyle, rtext, rlink)
                         linels.append(el)
-            print('###', win, win.gridlines)
+            #print('###', win, win.gridlines)
 
         if win.type == 'buffer':
             # Append the given lines onto the end of the buffer window
@@ -537,7 +547,7 @@ class GameStateRemGlk(GameState):
                     linels.append(el)
                         
             ### trim the scrollback
-            print('###', win, win.buflines)
+            #print('###', win, win.buflines)
                     
         if win.type == 'graphics':
             draw = arg.get('draw', [])
@@ -874,7 +884,6 @@ def run(gamefile):
         print('%s: (IFID %s): done' % (gamefile, ifid))
     except Exception as ex:
         print('%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex))
-        raise ###
 
     if tracefile:
         tracefile.close()
