@@ -1,11 +1,14 @@
 # IF-o-Matic: run IF games, record HTML screenshots.
+#   Version 0.5
 #   Andrew Plotkin <erkyrath@eblong.com>
+#   This script is in the public domain.
 
-# This uses the same crude model as regtest.py, because it's built on
-# the guts of regtest.py. It only understands a single story window
-# and a single status window, and it's not really clear about how
-# those are updated across multiple turns, either. The whole thing should
-# be ripped out and replaced by a glkote-compatible screen-state updater.
+# In its current state, this records the window state of all text windows
+# (grid and buffer), but does not track their size or arrangement. The
+# HTML output just shows all the windows, one after another, down the page.
+#
+# (This software is not connected to PlotEx; I'm just distributing them
+# from the same folder.)
 
 
 # We use the print() function for Python 2/3 compatibility
@@ -761,6 +764,9 @@ def get_format(file):
     raise Exception('Babel tool did not return a format')
 
 def run(gamefile):
+    if not os.path.exists(opts.shotdir):
+        os.mkdir(opts.shotdir)
+
     if re_ifid.match(gamefile):
         # This is an IFID, not a filename.
         ifid = gamefile
