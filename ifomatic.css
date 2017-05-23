@@ -12,10 +12,14 @@ body {
 .StatusLine {
   margin-left: 2em;
   margin-right: 2em;
+  white-space: pre-wrap; /* required for spaces to work right */
 }
-.StoryPara {
+.BufferWindow {
+}
+.BufferPara {
   margin-left: 2em;
   margin-right: 2em;
+  white-space: pre-wrap; /* required for spaces to work right */
 }
 .Style_emphasized {
   font-style: italic;

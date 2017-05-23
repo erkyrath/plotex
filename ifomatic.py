@@ -717,6 +717,18 @@ def write_html(ifid, gamefile, state, dirpath, fileindex=None):
                     fl.write('<span class="Style_%s">%s</span>' % (rstyle, escape_html(rtext)))
                 fl.write('</div>\n')
             fl.write('</div>\n')
+        if win.type == 'buffer':
+            fl.write('<div class="BufferWindow">\n')
+            for line in win.buflines:
+                fl.write('<div class="BufferPara">')
+                for span in line.ls:
+                    (rstyle, rtext, rlink) = span
+                    fl.write('<span class="Style_%s">%s</span>' % (rstyle, escape_html(rtext)))
+                if not line.ls:
+                    fl.write('&nbsp;');
+                fl.write('</div>\n')
+            fl.write('</div>\n')
+            
 
     fl.write('</body>\n')
     fl.write('</html>\n')
