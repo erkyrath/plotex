@@ -262,8 +262,10 @@ class GameStateRemGlk(GameState):
             height = 480
         res = {
             'width':width, 'height':height,
-            'gridcharwidth':10, 'gridcharheight':12,
-            'buffercharwidth':10, 'buffercharheight':12,
+            'gridcharwidth':8.5, 'gridcharheight':16,
+            'buffercharwidth':7, 'buffercharheight':16,
+            'gridmarginx':19, 'gridmarginy':12,
+            'buffermarginx':35, 'buffermarginy':12,
         }
         return res
     
