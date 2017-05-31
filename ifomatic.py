@@ -57,6 +57,10 @@ popt.add_option('--dir',
                 action='store', dest='shotdir',
                 default='screenshots',
                 help='directory to write screenshots to')
+popt.add_option('--html',
+                action='store', dest='htmlfile',
+                default='ifomatic.html',
+                help='HTML template to use')
 popt.add_option('--css',
                 action='store', dest='cssfile',
                 default='ifomatic.css',
@@ -702,51 +706,55 @@ def write_contents(ifid, gamefile, dirpath):
     fl.write('file: %s\n' % (os.path.abspath(gamefile),))
     fl.write('created: %s\n' % (datetime.datetime.now(),))
     fl.close()
+
+def write_html_window(fl, win):
+    if win.type == 'grid':
+        fl.write('<div class="StatusWindow">\n')
+        for line in win.gridlines:
+            fl.write('<div class="StatusLine">')
+            for span in line:
+                (rstyle, rtext, rlink) = span
+                fl.write('<span class="Style_%s">%s</span>' % (rstyle, escape_html(rtext)))
+            fl.write('</div>\n')
+        fl.write('</div>\n')
+            
+    if win.type == 'buffer':
+        fl.write('<div class="BufferWindow">\n')
+        for line in win.buflines:
+            fl.write('<div class="BufferPara">')
+            for span in line.ls:
+                (rstyle, rtext, rlink) = span
+                fl.write('<span class="Style_%s">%s</span>' % (rstyle, escape_html(rtext)))
+            if not line.ls:
+                fl.write('&nbsp;');
+            fl.write('</div>\n')
+        fl.write('</div>\n')
     
 def write_html(ifid, gamefile, state, dirpath, fileindex=None):
+    window_title = 'Game Screenshot' ###
+    
     filename = 'screen.html'
     if fileindex is not None:
         filename = 'screen-%d.html' % (fileindex,)
     fl = open(os.path.join(dirpath, filename), 'w')
 
-    fl.write('<!doctype HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">\n')
-    fl.write('<html>\n')
-    fl.write('<head>\n')
-    fl.write('<title>Game Dump</title>\n') ### use title from metadata
-    fl.write('<style type="text/css">\n')
-    fl.write(styleblock)
-    fl.write('</style>\n')
-    fl.write('</head>\n')
-    fl.write('<body>\n')
-
-    winls = list(state.windowdic.values())
-    winls.sort(key=lambda win:(win.type), reverse=True)
-
-    for win in winls:
-        if win.type == 'grid':
-            fl.write('<div class="StatusWindow">\n')
-            for line in win.gridlines:
-                fl.write('<div class="StatusLine">')
-                for span in line:
-                    (rstyle, rtext, rlink) = span
-                    fl.write('<span class="Style_%s">%s</span>' % (rstyle, escape_html(rtext)))
-                fl.write('</div>\n')
+    for ln in htmllines:
+        if ln == '$WINDOWPORT$':
+            fl.write('<div id="windowport">\n')
+            winls = list(state.windowdic.values())
+            winls.sort(key=lambda win: win.id)
+            for win in winls:
+                write_html_window(fl, win)
             fl.write('</div>\n')
-        if win.type == 'buffer':
-            fl.write('<div class="BufferWindow">\n')
-            for line in win.buflines:
-                fl.write('<div class="BufferPara">')
-                for span in line.ls:
-                    (rstyle, rtext, rlink) = span
-                    fl.write('<span class="Style_%s">%s</span>' % (rstyle, escape_html(rtext)))
-                if not line.ls:
-                    fl.write('&nbsp;');
-                fl.write('</div>\n')
-            fl.write('</div>\n')
-            
-
-    fl.write('</body>\n')
-    fl.write('</html>\n')
+        elif ln == '$STYLEBLOCK$':
+            fl.write(styleblock)
+        elif '$' in ln:
+            ln = ln.replace('$TITLE$', window_title)
+            fl.write(ln)
+            fl.write('\n')
+        else:
+            fl.write(ln)
+            fl.write('\n')
 
     fl.close()
 
@@ -902,6 +910,14 @@ if not args:
     print('usage: ifomatic.py [options] files or ifids ...')
     sys.exit(-1)
 
+htmlblock = ''
+if opts.htmlfile:
+    fl = open(opts.htmlfile)
+    htmlblock = fl.read()
+    fl.close()
+htmllines = htmlblock.split('\n')
+htmllines = [ ln.rstrip() for ln in htmllines ]
+    
 styleblock = ''
 if opts.cssfile:
     fl = open(opts.cssfile)
