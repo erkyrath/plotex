@@ -1,0 +1,60 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>$TITLE$</title>
+
+<meta name="viewport" content="width=device-width, user-scalable=no">
+
+<style type="text/css">
+
+body {
+  margin: 0px;
+  top: 0px;
+  bottom: 0px;
+  width: 100%;
+  background: #BBB; /* this color fills the left and right margins, next
+    to the gameport */
+}
+
+#column {
+  position: absolute;
+  width: 100%;
+  top: 0px;
+  height: 480px; /* page height */
+  margin: 0px;
+}
+
+#subcolumn {
+  position: relative;
+  width: 800px; /* column width */
+  height: 100%;
+  margin: auto;
+}
+
+#gameport {
+  position: absolute;
+  overflow: hidden;
+  background: #888; /* this color shows up only during loading, and 
+    for the space between windows, if the spacing config value is nonzero */
+  margin: auto;
+  top: 0px;
+  bottom: 0px;
+  width: 100%;
+}
+
+</style>
+
+
+</head>
+<body>
+
+<div id="column"><div id="subcolumn">
+
+<div id="gameport">
+$WINDOWPORT$
+</div>
+
+</div></div>
+
+</body>
+</html>
