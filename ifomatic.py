@@ -709,26 +709,31 @@ def write_contents(ifid, gamefile, dirpath):
 
 def write_html_window(fl, win):
     if win.type == 'grid':
-        fl.write('<div class="StatusWindow">\n')
+        cssclass = 'GridWindow'
+    elif win.type == 'buffer':
+        cssclass = 'BufferWindow'
+
+    fl.write('<div id="window%d" class="WindowFrame %s WindowRock_%d" style="">\n' % (win.id, cssclass, win.rock,))
+
+    if win.type == 'grid':
         for line in win.gridlines:
-            fl.write('<div class="StatusLine">')
+            fl.write('<div class="GridLine">')
             for span in line:
                 (rstyle, rtext, rlink) = span
                 fl.write('<span class="Style_%s">%s</span>' % (rstyle, escape_html(rtext)))
             fl.write('</div>\n')
-        fl.write('</div>\n')
             
     if win.type == 'buffer':
-        fl.write('<div class="BufferWindow">\n')
         for line in win.buflines:
-            fl.write('<div class="BufferPara">')
+            fl.write('<div class="BufferLine">')
             for span in line.ls:
                 (rstyle, rtext, rlink) = span
                 fl.write('<span class="Style_%s">%s</span>' % (rstyle, escape_html(rtext)))
             if not line.ls:
                 fl.write('&nbsp;');
             fl.write('</div>\n')
-        fl.write('</div>\n')
+            
+    fl.write('</div>\n')
     
 def write_html(ifid, gamefile, state, dirpath, fileindex=None):
     window_title = 'Game Screenshot' ###
