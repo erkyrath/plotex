@@ -453,6 +453,11 @@ class GameStateRemGlk(GameState):
             self.windowdic[argid] = win
 
         win.inplace = True
+
+        win.posleft = int(arg['left'])
+        win.postop = int(arg['top'])
+        win.poswidth = int(arg['width'])
+        win.posheight = int(arg['height'])
         
         if win.type == 'grid':
             # Make sure we have the correct number of lines.
@@ -460,7 +465,7 @@ class GameStateRemGlk(GameState):
             argwidth = arg['gridwidth']
             if argheight > win.gridheight:
                 for ix in range(win.gridheight, argheight):
-                    win.gridlines.append([]) ###?
+                    win.gridlines.append([])
             if argheight < win.gridheight:
                 del win.gridlines[ argheight : ]
             win.gridheight = argheight
@@ -713,7 +718,7 @@ def write_html_window(fl, win):
     elif win.type == 'buffer':
         cssclass = 'BufferWindow'
 
-    fl.write('<div id="window%d" class="WindowFrame %s WindowRock_%d" style="">\n' % (win.id, cssclass, win.rock,))
+    fl.write('<div id="window%d" class="WindowFrame %s WindowRock_%d" style="left: %dpx; top: %dpx; width: %dpx; height: %dpx">\n' % (win.id, cssclass, win.rock, win.posleft, win.postop, win.poswidth, win.posheight,))
 
     if win.type == 'grid':
         for line in win.gridlines:
