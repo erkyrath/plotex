@@ -721,13 +721,16 @@ def write_contents(ifid, gamefile, dirpath):
     fl.write('created: %s\n' % (datetime.datetime.now(),))
     fl.close()
 
-def write_html_window(fl, win):
+def write_html_window(win, state, fl):
     if win.type == 'grid':
         cssclass = 'GridWindow'
     elif win.type == 'buffer':
         cssclass = 'BufferWindow'
 
-    fl.write('<div id="window%d" class="WindowFrame %s WindowRock_%d" style="left: %dpx; top: %dpx; width: %dpx; height: %dpx">\n' % (win.id, cssclass, win.rock, win.posleft, win.postop, win.poswidth, win.posheight,))
+    posright = state.winwidth - (win.posleft + win.poswidth)
+    posbottom = state.winheight - (win.postop + win.posheight)
+    
+    fl.write('<div id="window%d" class="WindowFrame %s WindowRock_%d" style="left: %dpx; top: %dpx; right: %dpx; bottom: %dpx">\n' % (win.id, cssclass, win.rock, win.posleft, win.postop, posright, posbottom,))
 
     if win.type == 'grid':
         for line in win.gridlines:
@@ -763,7 +766,7 @@ def write_html(ifid, gamefile, state, dirpath, fileindex=None):
             winls = list(state.windowdic.values())
             winls.sort(key=lambda win: win.id)
             for win in winls:
-                write_html_window(fl, win)
+                write_html_window(win, state, fl)
             fl.write('</div>\n')
         elif ln == '$STYLEBLOCK$':
             fl.write(styleblock)
