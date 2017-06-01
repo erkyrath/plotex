@@ -755,8 +755,8 @@ def write_html_window(win, state, fl):
             
     fl.write('</div>\n')
     
-def write_html(ifid, gamefile, state, dirpath, fileindex=None):
-    window_title = 'Game Screenshot' ###
+def write_html(ifid, gamefile, metadata, state, dirpath, fileindex=None):
+    window_title = metadata.get('title', 'Game Screenshot')
     
     filename = 'screen.html'
     if fileindex is not None:
@@ -938,13 +938,13 @@ def run(gamefile):
         gamestate.accept_output()
         outindex = 0
         val = len(cmdlist) - outindex
-        write_html(ifid, gamefile, gamestate, dirpath=dir, fileindex=(outindex if val else None))
+        write_html(ifid, gamefile, metadata, gamestate, dirpath=dir, fileindex=(outindex if val else None))
         for cmd in cmdlist:
             gamestate.perform_input(cmd)
             gamestate.accept_output()
             outindex += 1
             val = len(cmdlist) - outindex
-            write_html(ifid, gamefile, gamestate, dirpath=dir, fileindex=(outindex if val else None))
+            write_html(ifid, gamefile, metadata, gamestate, dirpath=dir, fileindex=(outindex if val else None))
         print('%s: (IFID %s): done' % (gamefile, ifid))
     except Exception as ex:
         print('%s: unable to run: %s: %s' % (gamefile, ex.__class__.__name__, ex))
