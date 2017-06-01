@@ -65,6 +65,14 @@ popt.add_option('--css',
                 action='store', dest='cssfile',
                 default='ifomatic.css',
                 help='CSS file to include')
+popt.add_option('--width',
+                action='store', type=int, dest='winwidth',
+                default=800,
+                help='Window width in pixels (default: 800)')
+popt.add_option('--height',
+                action='store', type=int, dest='winheight',
+                default=600,
+                help='Window height in pixels (default: 600)')
 popt.add_option('--zterp',
                 action='store', dest='zterp',
                 default='fizmo-rem',
@@ -255,8 +263,8 @@ class GameStateRemGlk(GameState):
         return con
 
     def initialize(self):
-        self.winwidth = 800
-        self.winheight = 600
+        self.winwidth = opts.winwidth
+        self.winheight = opts.winheight
         update = { 'type':'init', 'gen':0,
                    'metrics': self.create_metrics(),
                    'support': [ 'timer', 'hyperlinks', 'graphics', 'graphicswin' ],
