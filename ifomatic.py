@@ -49,6 +49,7 @@ import select
 import re
 import datetime
 import json
+import xml.dom.minidom
 import time
 
 popt = optparse.OptionParser(usage='ifomatic.py [options] files or ifids ...')
@@ -807,6 +808,24 @@ def get_format(file):
         return val
     raise Exception('Babel tool did not return a format')
 
+def get_metadata(file):
+    res = subprocess.check_output([opts.babel, '-meta', file])
+    map = {}
+    if res.startswith(b'<?'):
+        dat = xml.dom.minidom.parseString(res)
+        for nod in dat.firstChild.childNodes:
+            if nod.nodeType == nod.ELEMENT_NODE and nod.nodeName == 'story':
+                for nod2 in nod.childNodes:
+                    if nod2.nodeType == nod2.ELEMENT_NODE and nod2.nodeName =='bibliographic':
+                        for nod3 in nod2.childNodes:
+                            if nod3.nodeType == nod3.ELEMENT_NODE:
+                                valls = []
+                                for nod4 in nod3.childNodes:
+                                    if nod4.nodeType == nod4.TEXT_NODE:
+                                        valls.append(nod4.nodeValue)
+                                map[nod3.nodeName] = ''.join(valls).strip()
+    return map
+
 def run(gamefile):
     if not os.path.exists(opts.shotdir):
         os.mkdir(opts.shotdir)
@@ -851,6 +870,12 @@ def run(gamefile):
         ifid = get_ifid(gamefile)
     except Exception as ex:
         print('%s: unable to get IFID: %s: %s' % (gamefile, ex.__class__.__name__, ex))
+        return
+
+    try:
+        metadata = get_metadata(gamefile)
+    except Exception as ex:
+        print('%s: unable to get metadata: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
 
     dir = os.path.join(opts.shotdir, ifid)
