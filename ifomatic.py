@@ -729,6 +729,8 @@ def write_html_window(win, state, fl):
         cssclass = 'GridWindow'
     elif win.type == 'buffer':
         cssclass = 'BufferWindow'
+    else:
+        cssclass = 'UnknownWindow'
 
     posright = state.winwidth - (win.posleft + win.poswidth)
     posbottom = state.winheight - (win.postop + win.posheight)
