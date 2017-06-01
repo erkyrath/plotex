@@ -254,24 +254,11 @@ class GameStateRemGlk(GameState):
             return []
         return con
 
-    @staticmethod
-    def create_metrics(width=None, height=None):
-        if not width:
-            width = 800
-        if not height:
-            height = 480
-        res = {
-            'width':width, 'height':height,
-            'gridcharwidth':8.5, 'gridcharheight':16,
-            'buffercharwidth':7, 'buffercharheight':16,
-            'gridmarginx':19, 'gridmarginy':12,
-            'buffermarginx':35, 'buffermarginy':12,
-        }
-        return res
-    
     def initialize(self):
+        self.winwidth = 800
+        self.winheight = 600
         update = { 'type':'init', 'gen':0,
-                   'metrics': GameStateRemGlk.create_metrics(),
+                   'metrics': self.create_metrics(),
                    'support': [ 'timer', 'hyperlinks', 'graphics', 'graphicswin' ],
                    }
         cmd = json.dumps(update)
@@ -280,6 +267,16 @@ class GameStateRemGlk(GameState):
         self.generation = 0
         self.windowdic = {}
         
+    def create_metrics(self):
+        res = {
+            'width':self.winwidth, 'height':self.winheight,
+            'gridcharwidth':8.5, 'gridcharheight':16,
+            'buffercharwidth':7, 'buffercharheight':16,
+            'gridmarginx':19, 'gridmarginy':12,
+            'buffermarginx':35, 'buffermarginy':12,
+        }
+        return res
+    
     def perform_input(self, cmd):
         if cmd.type == 'line':
             ls = [ winid for (winid, win) in self.windowdic.items()
@@ -307,8 +304,10 @@ class GameStateRemGlk(GameState):
         elif cmd.type == 'timer':
             update = { 'type':'timer', 'gen':self.generation }
         elif cmd.type == 'arrange':
+            self.winwidth = cmd.width
+            self.winheight = cmd.height
             update = { 'type':'arrange', 'gen':self.generation,
-                       'metrics': GameStateRemGlk.create_metrics(cmd.width, cmd.height)
+                       'metrics': self.create_metrics()
                        }
         elif cmd.type == 'refresh':
             update = { 'type':'refresh', 'gen':0 }
