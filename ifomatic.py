@@ -715,11 +715,13 @@ def escape_html(val):
                 res.append('&#'+str(och)+';')
     return ''.join(res)
 
-def write_contents(ifid, gamefile, dirpath):
+def write_contents(ifid, gamefile, metadata, dirpath):
     fl = open(os.path.join(dirpath, 'contents'), 'w')
     fl.write('IFID: %s\n' % (ifid,))
     fl.write('file: %s\n' % (os.path.abspath(gamefile),))
     fl.write('created: %s\n' % (datetime.datetime.now(),))
+    if 'title' in metadata:
+        fl.write('title: %s\n' % (metadata['title'],))
     fl.close()
 
 def write_html_window(win, state, fl):
@@ -927,7 +929,7 @@ def run(gamefile):
     tracefile = None
     
     try:
-        write_contents(ifid, gamefile, dirpath=dir)
+        write_contents(ifid, gamefile, metadata, dirpath=dir)
         
         tracefile = open(os.path.join(dir, 'trace.json'), 'w')
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout, tracefile)
