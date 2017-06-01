@@ -873,8 +873,11 @@ def run(gamefile):
             tag, dummy, body = ln.partition(':')
             tag, body = tag.strip(), body.strip()
             if tag == 'input':
-                if body.startswith('%char'):
-                    cmd = Command(body[5:].strip(), type='char')
+                match = re.match('^%([a-z]+)', body)
+                if match:
+                    intype = match.group(1)
+                    body = body[match.end() : ].strip()
+                    cmd = Command(body, type=intype)
                 else:
                     cmd = Command(body)
                 cmdlist.append(cmd)
