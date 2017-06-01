@@ -22,6 +22,12 @@
 # (This software is not connected to PlotEx; I'm just distributing them
 # from the same folder.)
 
+### move data files to a subdir
+### make staging optional
+### standardize on open-source fonts
+### add phantomizing as an option
+### unblorb and handle graphics
+### unpack zip
 
 # We use the print() function for Python 2/3 compatibility
 from __future__ import print_function
@@ -787,6 +793,22 @@ def write_html(ifid, gamefile, metadata, state, dirpath, fileindex=None):
 
     fl.close()
 
+def clear_html(dirpath):
+    filename = 'screen.html'
+    try:
+        os.remove(os.path.join(dirpath, filename))
+    except:
+        pass
+    
+    fileindex = 0
+    while True:
+        filename = 'screen-%d.html' % (fileindex,)
+        try:
+            os.remove(os.path.join(dirpath, filename))
+        except:
+            return
+        fileindex += 1
+    
 re_ifid = re.compile('^[A-Z0-9-]+$')
 re_ifidline = re.compile('^IFID: ([A-Z0-9-]+)$')
 re_formatline = re.compile('^Format: ([A-Za-z0-9 _-]+)$')
@@ -932,6 +954,7 @@ def run(gamefile):
     
     try:
         write_contents(ifid, gamefile, metadata, dirpath=dir)
+        clear_html(dirpath=dir)
         
         tracefile = open(os.path.join(dir, 'trace.json'), 'w')
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout, tracefile)
