@@ -761,6 +761,8 @@ def write_html(ifid, gamefile, state, dirpath, fileindex=None):
             fl.write(styleblock)
         elif '$' in ln:
             ln = ln.replace('$TITLE$', window_title)
+            ln = ln.replace('$WINWIDTH$', str(state.winwidth))
+            ln = ln.replace('$WINHEIGHT$', str(state.winheight))
             fl.write(ln)
             fl.write('\n')
         else:
