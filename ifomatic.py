@@ -8,7 +8,7 @@
 #   python3 ifomatic.py GAME
 #
 # This launches the game and writes the initial display state to
-# screenshots/IFID/screen.html (where IFID is the game's IFID).
+# ifomat-data/screenshots/IFID/screen.html (where IFID is the game's IFID).
 #
 # You must have the babel command-line tool in your path. You must also
 # have an appropriate interpreter compiled with the RemGlk library in
@@ -22,7 +22,6 @@
 # (This software is not connected to PlotEx; I'm just distributing them
 # from the same folder.)
 
-### move data files to a subdir
 ### standardize on open-source fonts
 ### add phantomizing as an option
 ### unblorb and handle graphics
