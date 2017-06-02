@@ -23,7 +23,6 @@
 # from the same folder.)
 
 ### move data files to a subdir
-### make staging optional
 ### standardize on open-source fonts
 ### add phantomizing as an option
 ### unblorb and handle graphics
@@ -95,6 +94,9 @@ popt.add_option('--babel',
 popt.add_option('--timeout',
                 dest='timeout_secs', type=float, default=1.0,
                 help='timeout interval (default: 1.0 sec)')
+popt.add_option('--staged',
+                action='store_true', dest='staged',
+                help='write out a screen-N.html file for each command input')
 popt.add_option('-v', '--verbose',
                 action='count', dest='verbose', default=0,
                 help='display the transcripts as they run')
@@ -773,6 +775,11 @@ def write_html(ifid, gamefile, metadata, state, dirpath, fileindex=None):
     """Write out the screen.html file in the game directory. We could
     also be writing a screen-N.html intermediate file.
     """
+    if (fileindex is not None) and (not opts.staged):
+        # If this is an intermediate file and the option for that isn't
+        # set, skip this file.
+        return
+    
     window_title = metadata.get('title', 'Game Screenshot')
     
     filename = 'screen.html'
