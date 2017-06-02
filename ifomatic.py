@@ -25,7 +25,6 @@
 # from the same folder.)
 
 ### standardize on open-source fonts
-### add phantomizing as an option
 ### unblorb and handle graphics
 ### unpack zip
 
