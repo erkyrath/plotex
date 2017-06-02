@@ -61,16 +61,12 @@ popt = optparse.OptionParser(usage='ifomatic.py [options] files or ifids ...')
 
 popt.add_option('--dir',
                 action='store', dest='shotdir',
-                default='screenshots',
+                default='ifomat-data/screenshots',
                 help='directory to write screenshots to')
 popt.add_option('--html',
                 action='store', dest='htmlfile',
-                default='ifomatic.html',
+                default='ifomat-data/template.html',
                 help='HTML template to use')
-popt.add_option('--css',
-                action='store', dest='cssfile',
-                default='ifomatic.css',
-                help='CSS file to include')
 popt.add_option('--width',
                 action='store', type=int, dest='winwidth',
                 default=800,
@@ -795,8 +791,6 @@ def write_html(ifid, gamefile, metadata, state, dirpath, fileindex=None):
             for win in winls:
                 write_html_window(win, state, fl)
             fl.write('</div>\n')
-        elif ln == '$STYLEBLOCK$':
-            fl.write(styleblock)
         elif '$' in ln:
             ln = ln.replace('$TITLE$', window_title)
             ln = ln.replace('$WINWIDTH$', str(state.winwidth))
@@ -1016,11 +1010,5 @@ if opts.htmlfile:
 htmllines = htmlblock.split('\n')
 htmllines = [ ln.rstrip() for ln in htmllines ]
     
-styleblock = ''
-if opts.cssfile:
-    fl = open(opts.cssfile)
-    styleblock = fl.read()
-    fl.close()
-
 for arg in args:
     run(arg)
