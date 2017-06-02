@@ -774,6 +774,9 @@ def write_html_window(win, state, fl):
 def write_html(ifid, gamefile, metadata, state, dirpath, fileindex=None):
     """Write out the screen.html file in the game directory. We could
     also be writing a screen-N.html intermediate file.
+
+    If the --image option is given, we then convert the HTML file to
+    a PNG file.
     """
     if (fileindex is not None) and (not opts.staged):
         # If this is an intermediate file and the option for that isn't
@@ -815,7 +818,8 @@ def write_html(ifid, gamefile, metadata, state, dirpath, fileindex=None):
 
 def clear_html(dirpath):
     """Remove the screen.html file from the game directory. Actually
-    we remove all the screen-N.html files that we find.
+    we remove all the screen-N.html files that we find. Also the
+    screen*.png files.
     """
     filename = 'screen.html'
     try:
@@ -829,7 +833,22 @@ def clear_html(dirpath):
         try:
             os.remove(os.path.join(dirpath, filename))
         except:
-            return
+            break
+        fileindex += 1
+    
+    filename = 'screen.png'
+    try:
+        os.remove(os.path.join(dirpath, filename))
+    except:
+        pass
+    
+    fileindex = 0
+    while True:
+        filename = 'screen-%d.png' % (fileindex,)
+        try:
+            os.remove(os.path.join(dirpath, filename))
+        except:
+            break
         fileindex += 1
     
 re_ifid = re.compile('^[A-Z0-9-]+$')
