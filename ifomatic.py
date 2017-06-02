@@ -8,7 +8,7 @@
 #   python3 ifomatic.py GAME
 #
 # This launches the game and writes the initial display state to
-# ifomat-data/screenshots/IFID/screen.html (where IFID is the game's IFID).
+# ifomat-data/games/IFID/screen.html (where IFID is the game's IFID).
 #
 # You must have the babel command-line tool in your path. You must also
 # have an appropriate interpreter compiled with the RemGlk library in
@@ -59,9 +59,9 @@ import time
 popt = optparse.OptionParser(usage='ifomatic.py [options] files or ifids ...')
 
 popt.add_option('--dir',
-                action='store', dest='shotdir',
-                default='ifomat-data/screenshots',
-                help='directory to write screenshots to')
+                action='store', dest='dir',
+                default='ifomat-data',
+                help='data directory (default: ifomat-data)')
 popt.add_option('--html',
                 action='store', dest='htmlfile',
                 default='ifomat-data/template.html',
@@ -865,13 +865,13 @@ def get_metadata(file):
     return map
 
 def run(gamefile):
-    if not os.path.exists(opts.shotdir):
-        os.mkdir(opts.shotdir)
+    if not os.path.exists(gamesdir):
+        os.mkdir(gamesdir)
 
     if re_ifid.match(gamefile):
         # This is an IFID, not a filename.
         ifid = gamefile
-        dir = os.path.join(opts.shotdir, ifid)
+        dir = os.path.join(gamesdir, ifid)
         if not os.path.exists(dir):
             print('%s: no IFID directory (%s)' % (ifid, dir))
             return
@@ -916,7 +916,7 @@ def run(gamefile):
         print('%s: unable to get metadata: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
 
-    dir = os.path.join(opts.shotdir, ifid)
+    dir = os.path.join(gamesdir, ifid)
     if not os.path.exists(dir):
         os.mkdir(dir)
 
@@ -1008,6 +1008,8 @@ if opts.htmlfile:
     fl.close()
 htmllines = htmlblock.split('\n')
 htmllines = [ ln.rstrip() for ln in htmllines ]
-    
+
+gamesdir = os.path.join(opts.dir, 'games')
+
 for arg in args:
     run(arg)
