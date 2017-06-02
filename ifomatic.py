@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # IF-o-Matic: run IF games, record HTML screenshots.
 #   Version 0.7
 #   Andrew Plotkin <erkyrath@eblong.com>
