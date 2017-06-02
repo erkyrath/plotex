@@ -91,6 +91,9 @@ popt.add_option('--babel',
 popt.add_option('--timeout',
                 dest='timeout_secs', type=float, default=1.0,
                 help='timeout interval (default: 1.0 sec)')
+popt.add_option('--image',
+                action='store_true', dest='image',
+                help='write out screen.png file in addition to screen.html')
 popt.add_option('--staged',
                 action='store_true', dest='staged',
                 help='write out a screen-N.html file for each command input')
@@ -803,6 +806,12 @@ def write_html(ifid, gamefile, metadata, state, dirpath, fileindex=None):
             fl.write('\n')
 
     fl.close()
+
+    if opts.image:
+        genimage = os.path.join(opts.dir, 'genimage.js')
+        ifilename = re.sub('[.]html$', '.png', filename)
+        size = '%dx%d' % (state.winwidth, state.winheight,)
+        subprocess.run(['phantomjs', genimage, os.path.join(dirpath, filename), os.path.join(dirpath, ifilename), size], check=True)
 
 def clear_html(dirpath):
     """Remove the screen.html file from the game directory. Actually
