@@ -705,6 +705,10 @@ def escape_json(val):
     return ''.join(res)
 
 def escape_html(val):
+    """Apply &-escapes to render arbitrary strings in ASCII-clean HTML.
+    This is miserably inefficient -- I'm sure there's a built-in Python
+    function which does it, but I haven't looked it up.
+    """
     res = []
     for ch in val:
         if ch == '&':
@@ -731,6 +735,8 @@ def write_contents(ifid, gamefile, metadata, dirpath):
     fl.close()
 
 def write_html_window(win, state, fl):
+    """Write the contents of one Glk window in screen.html.
+    """
     if win.type == 'grid':
         cssclass = 'GridWindow'
     elif win.type == 'buffer':
@@ -764,6 +770,9 @@ def write_html_window(win, state, fl):
     fl.write('</div>\n')
     
 def write_html(ifid, gamefile, metadata, state, dirpath, fileindex=None):
+    """Write out the screen.html file in the game directory. We could
+    also be writing a screen-N.html intermediate file.
+    """
     window_title = metadata.get('title', 'Game Screenshot')
     
     filename = 'screen.html'
@@ -794,6 +803,9 @@ def write_html(ifid, gamefile, metadata, state, dirpath, fileindex=None):
     fl.close()
 
 def clear_html(dirpath):
+    """Remove the screen.html file from the game directory. Actually
+    we remove all the screen-N.html files that we find.
+    """
     filename = 'screen.html'
     try:
         os.remove(os.path.join(dirpath, filename))
