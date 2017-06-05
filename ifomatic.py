@@ -73,11 +73,11 @@ popt.add_option('--html',
 popt.add_option('--width',
                 action='store', type=int, dest='winwidth',
                 default=800,
-                help='Window width in pixels (default: 800)')
+                help='window width in pixels (default: 800)')
 popt.add_option('--height',
                 action='store', type=int, dest='winheight',
                 default=600,
-                help='Window height in pixels (default: 600)')
+                help='window height in pixels (default: 600)')
 popt.add_option('--zterp',
                 action='store', dest='zterp',
                 default='fizmo-rem',
@@ -90,6 +90,10 @@ popt.add_option('--babel',
                 action='store', dest='babel',
                 default='babel',
                 help='Babel tool')
+popt.add_option('--blorbtool',
+                action='store', dest='blorbtool',
+                default='blorbtool.py',
+                help='blorbtool.py script')
 popt.add_option('--timeout',
                 dest='timeout_secs', type=float, default=1.0,
                 help='timeout interval (default: 1.0 sec)')
@@ -898,6 +902,14 @@ def get_metadata(file):
                                 map[nod3.nodeName] = ''.join(valls).strip()
     return map
 
+def extract_blorb_data(file, dir):
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+        
+    subprocess.run(['python3', opts.blorbtool, file, 'giload', dir], check=True)
+    if not os.path.exists(os.path.join(dir, 'resourcemap.js')):
+        raise Exception('Could not find resourcemap.js in deblorbed directory')
+
 def run(gamefile):
     if not os.path.exists(gamesdir):
         os.mkdir(gamesdir)
@@ -954,6 +966,15 @@ def run(gamefile):
     dir = os.path.join(gamesdir, ifid)
     if not os.path.exists(dir):
         os.mkdir(dir)
+
+    if blorbed:
+        try:
+            blorbdir = os.path.join(dir, 'blorbdata')
+            if not os.path.exists(blorbdir):
+                extract_blorb_data(gamefile, blorbdir)
+        except Exception as ex:
+            print('%s: unable to deblorb: %s: %s' % (gamefile, ex.__class__.__name__, ex))
+            return
 
     if format == 'zcode':
         terppath = opts.zterp
