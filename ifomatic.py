@@ -28,7 +28,7 @@
 # from the same folder.)
 
 ### standardize on open-source fonts
-### unblorb and handle graphics
+### handle graphics using unblorbed data
 ### unpack zip
 
 # We use the print() function for Python 2/3 compatibility
@@ -871,6 +871,9 @@ def get_ifid(file):
     raise Exception('Babel tool did not return an IFID')
 
 def get_format(file):
+    """Figure out what kind of IF file this is. (By asking the Babel
+    tool.)
+    """
     res = subprocess.check_output([opts.babel, '-format', file])
     res = res.decode('utf-8')
     res = res.strip()
@@ -885,6 +888,13 @@ def get_format(file):
     raise Exception('Babel tool did not return a format')
 
 def get_metadata(file):
+    """Extract the metadata from a game (typically a blorb file)
+    by asking the Babel tool.
+    
+    This does some very simple processing on the XML metadata chunk
+    to pull out all the subtags of the <bibliographic> tag and return
+    them as a dict.
+    """
     res = subprocess.check_output([opts.babel, '-meta', file])
     map = {}
     if res.startswith(b'<?'):
@@ -903,6 +913,10 @@ def get_metadata(file):
     return map
 
 def extract_blorb_data(file, dir):
+    """Extract the contents of a blorb file into a blorbdata subdir.
+    (By asking the blorbtool.py tool.)
+    This will be needed to link images into the static HTML output.
+    """
     if not os.path.exists(dir):
         os.mkdir(dir)
         
@@ -911,6 +925,8 @@ def extract_blorb_data(file, dir):
         raise Exception('Could not find resourcemap.js in deblorbed directory')
 
 def run(gamefile):
+    """Process one game (presented as a pathname or IFID string).
+    """
     if not os.path.exists(gamesdir):
         os.mkdir(gamesdir)
 
