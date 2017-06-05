@@ -862,6 +862,8 @@ re_ifidline = re.compile('^IFID: ([A-Z0-9-]+)$')
 re_formatline = re.compile('^Format: ([A-Za-z0-9 _-]+)$')
 
 def get_ifid(file):
+    """Figure out the IFID of this file. (By asking the Babel tool.)
+    """
     res = subprocess.check_output([opts.babel, '-ifid', file])
     res = res.decode('utf-8')
     res = res.strip()
