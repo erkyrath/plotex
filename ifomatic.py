@@ -873,9 +873,11 @@ def get_format(file):
     match = re_formatline.match(res)
     if match:
         val = match.group(1)
+        blorbed = False
         if val.startswith('blorbed '):
             val = val[8:]
-        return val
+            blorbed = True
+        return (val, blorbed)
     raise Exception('Babel tool did not return a format')
 
 def get_metadata(file):
@@ -901,7 +903,8 @@ def run(gamefile):
         os.mkdir(gamesdir)
 
     if re_ifid.match(gamefile):
-        # This is an IFID, not a filename.
+        # This is an IFID, not a filename. Pull the filename out of
+        # the previously-parsed contents info.
         ifid = gamefile
         dir = os.path.join(gamesdir, ifid)
         if not os.path.exists(dir):
@@ -928,7 +931,7 @@ def run(gamefile):
         return
     
     try:
-        format = get_format(gamefile)
+        (format, blorbed) = get_format(gamefile)
     except Exception as ex:
         print('%s: unable to get format: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
