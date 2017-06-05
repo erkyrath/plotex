@@ -959,7 +959,8 @@ def run(gamefile):
     if not os.path.exists(gamefile):
         print('%s: no such file' % (gamefile,))
         return
-    
+
+    # Check the format.
     try:
         (format, blorbed) = get_format(gamefile)
     except Exception as ex:
@@ -969,22 +970,29 @@ def run(gamefile):
         print('%s: format is not zcode/glulx: %s' % (gamefile, format))
         return
 
+    # Check the IFID.
     try:
         ifid = get_ifid(gamefile)
     except Exception as ex:
         print('%s: unable to get IFID: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
 
+    # Pull the metadata if available.
     try:
         metadata = get_metadata(gamefile)
     except Exception as ex:
         print('%s: unable to get metadata: %s: %s' % (gamefile, ex.__class__.__name__, ex))
         return
 
+    # Create the game dir, which will be ifomat-data/IFID.
     dir = os.path.join(gamesdir, ifid)
     if not os.path.exists(dir):
         os.mkdir(dir)
 
+    # If the game file is a blorb, extract the image and sound files
+    # so we can link them into generated HTML.
+    # This is only done once -- if the blorbdata directory exists,
+    # we don't re-extract. (This optimization could be smarter.)
     if blorbed:
         try:
             blorbdir = os.path.join(dir, 'blorbdata')
@@ -994,6 +1002,7 @@ def run(gamefile):
             print('%s: unable to deblorb: %s: %s' % (gamefile, ex.__class__.__name__, ex))
             return
 
+    # Pick an interpreter.
     if format == 'zcode':
         terppath = opts.zterp
     else:
@@ -1001,6 +1010,9 @@ def run(gamefile):
     testterpargs = []
     cmdlist = []
 
+    # Check for an options file. If it exists, it contains ad-hoc
+    # extra information about running the game. Currently this means
+    # input commands to run before doing the screenshot.
     optfile = os.path.join(dir, 'options')
     if os.path.exists(optfile):
         fl = open(optfile)
@@ -1024,6 +1036,8 @@ def run(gamefile):
             else:
                 print('%s: warning: unrecognized line in options: %s' % (gamefile, ln))
         fl.close()
+
+    # Begin running the game!
     
     args = [ terppath ] + testterpargs + [ gamefile ]
     proc = None
