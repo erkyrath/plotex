@@ -231,6 +231,7 @@ class GlkSpecialSpan:
         if self.type == 'image':
             self.image = int(arg['image'])
             self.alignment = arg.get('alignment')
+            self.alttext = arg.get('alttext')
             val = arg.get('width')
             if val is not None:
                 self.width = int(val)
@@ -737,7 +738,7 @@ def escape_json(val):
     res.append('"')
     return ''.join(res)
 
-def escape_html(val):
+def escape_html(val, quotes=False):
     """Apply &-escapes to render arbitrary strings in ASCII-clean HTML.
     This is miserably inefficient -- I'm sure there's a built-in Python
     function which does it, but I haven't looked it up.
@@ -750,6 +751,8 @@ def escape_html(val):
             res.append('&gt;')
         elif ch == '<':
             res.append('&lt;')
+        elif quotes and ch == '"':
+            res.append('&quot;')
         else:
             och = ord(ch)
             if och < 128:
@@ -795,7 +798,22 @@ def write_html_window(win, state, fl):
             fl.write('<div class="BufferLine">')
             for span in line.ls:
                 if isinstance(span, GlkSpecialSpan):
+                    if span.type == 'image':
+                        image = resourcemap.get(span.image)
+
+                        srcval = os.path.join(resourcemap.dir, image.filename)
+                        srcval = escape_html(srcval, quotes=True)
+
+                        altval = span.alttext
+                        if not altval:
+                            altval = image.alttext
+                        if not altval:
+                            altval = 'Image %d' % (span.image,)
+                        altval = escape_html(altval, quotes=True)
+                        
+                        fl.write('<img src="%s" alt="%s" width="%d" height="%d">' % (srcval, altval, span.width, span.height,))
                     continue
+                
                 (rstyle, rtext, rlink) = span
                 fl.write('<span class="Style_%s">%s</span>' % (rstyle, escape_html(rtext)))
             if not line.ls:
