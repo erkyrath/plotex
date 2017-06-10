@@ -347,7 +347,7 @@ class GameStateRemGlk(GameState):
                        }
         else:
             raise Exception('Command type not recognized: %s' % (cmd.type))
-        if opts.verbose:
+        if opts.verbose >= 2:
             ObjPrint.pprint(update)
             print()
         if self.tracefile:
@@ -390,7 +390,7 @@ class GameStateRemGlk(GameState):
         # Parse the update object. This is complicated. For the format,
         # see http://eblong.com/zarf/glk/glkote/docs.html
 
-        if opts.verbose:
+        if opts.verbose >= 2:
             ObjPrint.pprint(update)
             print()
         if self.tracefile:
@@ -909,7 +909,8 @@ def find_in_zip(file):
         os.mkdir(unzipdir)
         
     if not os.path.exists(zipdir):
-        print('### unpacking', file, 'to', zipdir)
+        if opts.verbose >= 1:
+            print('unzipping', file, 'to', zipdir)
         os.mkdir(zipdir)
         zipfl = zipfile.ZipFile(file)
         zipfl.extractall(zipdir)
@@ -921,16 +922,16 @@ def find_in_zip(file):
     res = None
     
     for (dirpath, dirnames, filenames) in os.walk(zipdir):
-        print('### tup', dirpath, filenames)
         for path in filenames:
             (_, suffix) = os.path.splitext(path)
             if suffix.lower() in all_game_suffixes:
                 if res is None or len(dirpath) < len(res[0]):
                     res = (dirpath, path)
 
-    print('### res', res)
-
+    if res:
+        return os.path.join(res[0], res[1])
     return None
+
 
 def choose_unzip_dir(file):
     unzipdir = os.path.join(opts.dir, 'unzip')
@@ -1038,6 +1039,8 @@ def run(gamefile):
         if not res:
             print('%s: unable to find game file' % (gamefile,))
             return
+        if opts.verbose >= 1:
+            print('found %s in %s' % (res, gamefile,))
         gamefile = res
 
     if re_ifid.match(gamefile):
