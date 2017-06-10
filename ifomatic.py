@@ -916,8 +916,10 @@ def find_in_zip(file):
         zipfl.close()
 
     # Search the directory for anything that looks like a game file.
+    for (dirpath, dirnames, filenames) in os.walk(zipdir):
+        print('### tup', dirpath, filenames)
         
-    return zipdir ###
+    return None
 
 def unpack_zip(file):
     unzipdir = os.path.join(opts.dir, 'unzip')
@@ -1191,7 +1193,6 @@ htmllines = [ ln.rstrip() for ln in htmllines ]
 gamesdir = os.path.join(opts.dir, 'games')
 
 read_zip_mapping(opts.dir)
-print('### zip_map', zip_map)
 
 for arg in args:
     run(arg)
