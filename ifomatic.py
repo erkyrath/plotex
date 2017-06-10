@@ -857,6 +857,11 @@ def clear_html(dirpath):
             break
         fileindex += 1
     
+def find_in_zip(file):
+    """Unpack the zip file (if necessary) and locate a game file in it.
+    """
+    return
+
 re_ifid = re.compile('^[A-Z0-9-]+$')
 re_ifidline = re.compile('^IFID: ([A-Z0-9-]+)$')
 re_formatline = re.compile('^Format: ([A-Za-z0-9 _-]+)$')
@@ -931,6 +936,15 @@ def run(gamefile):
     """
     if not os.path.exists(gamesdir):
         os.mkdir(gamesdir)
+
+    (_, suffix) = os.path.splitext(os.path.basename(gamefile))
+    if suffix == '.zip':
+        # This is a zip file. We must unpack it to find the *real* filename.
+        res = find_in_zip(gamefile)
+        if not res:
+            print('%s: unable to find game file' % (gamefile,))
+            return
+        gamefile = res
 
     if re_ifid.match(gamefile):
         # This is an IFID, not a filename. Pull the filename out of
