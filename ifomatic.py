@@ -224,7 +224,23 @@ class GlkBufferLine:
 
     def append(self, val):
         self.ls.append(val)
-    
+
+class GlkSpecialSpan:
+    def __init__(self, arg):
+        self.type = arg['special']
+        if self.type == 'image':
+            self.image = int(arg['image'])
+            self.alignment = arg.get('alignment')
+            val = arg.get('width')
+            if val is not None:
+                self.width = int(val)
+            val = arg.get('height')
+            if val is not None:
+                self.height = int(val)
+
+    def __repr__(self):
+        return '<GlkSpecialSpan %s>' % (self.type,)
+        
 class GameState:
     """The GameState class wraps the connection to the interpreter subprocess
     (the pipe in and out streams). It's responsible for sending commands
@@ -568,7 +584,8 @@ class GameStateRemGlk(GameState):
                     sx += 1
                     if type(rdesc) is dict:
                         if rdesc.get('special') is not None:
-                            ### images
+                            el = GlkSpecialSpan(rdesc)
+                            linels.append(el)
                             continue
                         rstyle = rdesc['style']
                         rtext = rdesc['text']
@@ -777,6 +794,8 @@ def write_html_window(win, state, fl):
         for line in win.buflines:
             fl.write('<div class="BufferLine">')
             for span in line.ls:
+                if isinstance(span, GlkSpecialSpan):
+                    continue
                 (rstyle, rtext, rlink) = span
                 fl.write('<span class="Style_%s">%s</span>' % (rstyle, escape_html(rtext)))
             if not line.ls:
