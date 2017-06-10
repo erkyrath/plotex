@@ -898,7 +898,7 @@ def find_in_zip(file):
     if file in zip_map:
         zipdir = zip_map[file]
     else:
-        zipdir = unpack_zip(file)
+        zipdir = choose_unzip_dir(file)
         add_zip_mapping(file, zipdir)
 
     # If the directory does not exist, create it and unzip.
@@ -916,12 +916,23 @@ def find_in_zip(file):
         zipfl.close()
 
     # Search the directory for anything that looks like a game file.
+    # We do this with a crude suffix check -- babel would be smarter,
+    # maybe.
+    res = None
+    
     for (dirpath, dirnames, filenames) in os.walk(zipdir):
         print('### tup', dirpath, filenames)
-        
+        for path in filenames:
+            (_, suffix) = os.path.splitext(path)
+            if suffix.lower() in all_game_suffixes:
+                if res is None or len(dirpath) < len(res[0]):
+                    res = (dirpath, path)
+
+    print('### res', res)
+
     return None
 
-def unpack_zip(file):
+def choose_unzip_dir(file):
     unzipdir = os.path.join(opts.dir, 'unzip')
     if not os.path.exists(unzipdir):
         os.mkdir(unzipdir)
@@ -936,11 +947,15 @@ def unpack_zip(file):
         if not os.path.exists(dir):
             break
         index += 1
-    print('### chose zipdir', dir)
-    ###
         
     return dir
-    
+
+all_game_suffixes = set([
+    '.ulx',
+    '.z3', '.z4', '.z5', '.z8',
+    '.blb', '.blorb', '.zblorb', '.gblorb',
+])
+
 re_ifid = re.compile('^[A-Z0-9-]+$')
 re_ifidline = re.compile('^IFID: ([A-Z0-9-]+)$')
 re_formatline = re.compile('^Format: ([A-Za-z0-9 _-]+)$')
