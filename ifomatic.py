@@ -58,6 +58,7 @@ import re
 import datetime
 import json
 import xml.dom.minidom
+import zipfile
 import time
 
 popt = optparse.OptionParser(usage='ifomatic.py [options] files or ifids ...')
@@ -899,6 +900,19 @@ def find_in_zip(file):
     else:
         zipdir = unpack_zip(file)
         add_zip_mapping(file, zipdir)
+
+    # If the directory does not exist, create it and unzip.
+    # (We assume that if the directory exists, it contains a complete
+    # extraction.)
+    if not os.path.exists(zipdir):
+        print('### unpacking', file, 'to', zipdir)
+        os.mkdir(zipdir)
+        zipfl = zipfile.ZipFile(file)
+        zipfl.extractall(zipdir)
+        zipfl.close()
+
+    # Search the directory for anything that looks like a game file.
+        
     return zipdir ###
 
 def unpack_zip(file):
