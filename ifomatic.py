@@ -241,7 +241,24 @@ class GlkSpecialSpan:
 
     def __repr__(self):
         return '<GlkSpecialSpan %s>' % (self.type,)
+
+class ResourceMap:
+    def __init__(self, dir):
+        self.dir = dir
+        self.map = {}
         
+        if not dir:
+            return
+        mappath = os.path.join(dir, 'resourcemap.js')
+        if not os.path.exists(mappath):
+            return
+
+        ### Unfortunately at this point we have to decode JS data
+        ### (not JSON-compatible). I haven't written that yet.
+
+    def get(self, num):
+        return map.get(num)
+    
 class GameState:
     """The GameState class wraps the connection to the interpreter subprocess
     (the pipe in and out streams). It's responsible for sending commands
@@ -294,7 +311,9 @@ class GameStateRemGlk(GameState):
             return []
         return con
 
-    def initialize(self):
+    def initialize(self, blorbdir):
+        self.resourcemap = ResourceMap(blorbdir)
+        
         self.winwidth = opts.winwidth
         self.winheight = opts.winheight
         update = { 'type':'init', 'gen':0,
@@ -799,19 +818,19 @@ def write_html_window(win, state, fl):
             for span in line.ls:
                 if isinstance(span, GlkSpecialSpan):
                     if span.type == 'image':
-                        image = resourcemap.get(span.image)
-
-                        srcval = os.path.join(resourcemap.dir, image.filename)
-                        srcval = escape_html(srcval, quotes=True)
-
-                        altval = span.alttext
-                        if not altval:
-                            altval = image.alttext
-                        if not altval:
-                            altval = 'Image %d' % (span.image,)
-                        altval = escape_html(altval, quotes=True)
+                        image = state.resourcemap.get(span.image)
+                        if image:
+                            srcval = os.path.join(state.resourcemap.dir, image.filename)
+                            srcval = escape_html(srcval, quotes=True)
                         
-                        fl.write('<img src="%s" alt="%s" width="%d" height="%d">' % (srcval, altval, span.width, span.height,))
+                            altval = span.alttext
+                            if not altval:
+                                altval = image.alttext
+                            if not altval:
+                                altval = 'Image %d' % (span.image,)
+                            altval = escape_html(altval, quotes=True)
+                        
+                            fl.write('<img src="%s" alt="%s" width="%d" height="%d">' % (srcval, altval, span.width, span.height,))
                     continue
                 
                 (rstyle, rtext, rlink) = span
@@ -1140,6 +1159,7 @@ def run(gamefile):
     # so we can link them into generated HTML.
     # This is only done once -- if the blorbdata directory exists,
     # we don't re-extract. (This optimization could be smarter.)
+    blorbdir = None
     if blorbed:
         try:
             blorbdir = os.path.join(dir, 'blorbdata')
@@ -1206,7 +1226,7 @@ def run(gamefile):
         tracefile = open(os.path.join(dir, 'trace.json'), 'w')
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout, tracefile)
     
-        gamestate.initialize()
+        gamestate.initialize(blorbdir)
         gamestate.accept_output()
         outindex = 0
         val = len(cmdlist) - outindex
