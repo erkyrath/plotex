@@ -869,6 +869,7 @@ zip_map_path = None
 zip_map = {}   # maps pathnames of zip files to directory names
 
 def read_zip_mapping(dir=dir):
+    global zip_map_path
     zip_map_path = os.path.join(dir, 'zipmap')
     if not os.path.exists(zip_map_path):
         return
@@ -901,8 +902,24 @@ def find_in_zip(file):
     return zipdir ###
 
 def unpack_zip(file):
-    val = os.path.basename(file)
+    unzipdir = os.path.join(opts.dir, 'unzip')
+    if not os.path.exists(unzipdir):
+        os.mkdir(unzipdir)
     
+    val = os.path.basename(file)
+    val = re.sub('[^a-zA-Z0-9]+', '-', val)
+    index = 0
+    while True:
+        dir = os.path.join(unzipdir, val)
+        if index:
+            dir = dir + '-%d' % (index,)
+        if not os.path.exists(dir):
+            break
+        index += 1
+    print('### chose zipdir', dir)
+    ###
+        
+    return dir
     
 re_ifid = re.compile('^[A-Z0-9-]+$')
 re_ifidline = re.compile('^IFID: ([A-Z0-9-]+)$')
