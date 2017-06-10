@@ -904,6 +904,10 @@ def find_in_zip(file):
     # If the directory does not exist, create it and unzip.
     # (We assume that if the directory exists, it contains a complete
     # extraction.)
+    unzipdir = os.path.join(opts.dir, 'unzip')
+    if not os.path.exists(unzipdir):
+        os.mkdir(unzipdir)
+        
     if not os.path.exists(zipdir):
         print('### unpacking', file, 'to', zipdir)
         os.mkdir(zipdir)
