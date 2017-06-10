@@ -698,6 +698,14 @@ class ObjPrint:
             raise Exception('unknown type: %r' % (val,))
 
 
+def append_to_file(path, ln):
+    if not os.path.exists(path):
+        fl = open(path, 'w')
+    else:
+        fl = open(path, 'a')
+    fl.write(ln + '\n')
+    fl.close()
+    
 def escape_json(val):
     res = ['"']
     for ch in val:
@@ -856,12 +864,46 @@ def clear_html(dirpath):
         except:
             break
         fileindex += 1
-    
+
+zip_map_path = None
+zip_map = {}   # maps pathnames of zip files to directory names
+
+def read_zip_mapping(dir=dir):
+    zip_map_path = os.path.join(dir, 'zipmap')
+    if not os.path.exists(zip_map_path):
+        return
+    fl = open(zip_map_path)
+    for ln in fl.readlines():
+        ln = ln.strip()
+        if not ln:
+            continue
+        if ln.startswith('#'):
+            continue
+        path, dummy, dir = ln.partition('\t')
+        if path and dummy and dir:
+            zip_map[path] = dir
+
+def add_zip_mapping(zippath, dirpath):
+    zip_map[zippath] = dirpath
+    val = zippath + '\t' + dirpath
+    append_to_file(zip_map_path, val)
+
 def find_in_zip(file):
     """Unpack the zip file (if necessary) and locate a game file in it.
+    
+    We keep track of a list of previously-unpacked zip files.
     """
-    return
+    if file in zip_map:
+        zipdir = zip_map[file]
+    else:
+        zipdir = unpack_zip(file)
+        add_zip_mapping(file, zipdir)
+    return zipdir ###
 
+def unpack_zip(file):
+    val = os.path.basename(file)
+    
+    
 re_ifid = re.compile('^[A-Z0-9-]+$')
 re_ifidline = re.compile('^IFID: ([A-Z0-9-]+)$')
 re_formatline = re.compile('^Format: ([A-Za-z0-9 _-]+)$')
@@ -1112,6 +1154,9 @@ htmllines = htmlblock.split('\n')
 htmllines = [ ln.rstrip() for ln in htmllines ]
 
 gamesdir = os.path.join(opts.dir, 'games')
+
+read_zip_mapping(opts.dir)
+print('### zip_map', zip_map)
 
 for arg in args:
     run(arg)
