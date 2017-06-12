@@ -243,6 +243,21 @@ class GlkSpecialSpan:
             if val is not None:
                 self.height = int(val)
 
+    def imageclass(self):
+        if self.type != 'image':
+            return
+        if self.alignment == 'inlineup':
+            return 'ImageInlineUp'
+        if self.alignment == 'inlinedown':
+            return 'ImageInlineDown'
+        if self.alignment == 'inlinecenter':
+            return 'ImageInlineCenter'
+        if self.alignment == 'marginleft':
+            return 'ImageMarginLeft'
+        if self.alignment == 'marginright':
+            return 'ImageMarginRight'
+        return 'ImageInlineUp'
+
     def __repr__(self):
         return '<GlkSpecialSpan %s>' % (self.type,)
 
@@ -833,6 +848,8 @@ def write_html_window(win, state, fl):
                         if image:
                             srcval = '%s/%s' % ('blorbdata', image.url,)
                             srcval = escape_html(srcval, quotes=True)
+
+                            classval = image.imageclass()
                         
                             altval = span.alttext
                             if not altval:
@@ -841,7 +858,7 @@ def write_html_window(win, state, fl):
                                 altval = 'Image %d' % (span.image,)
                             altval = escape_html(altval, quotes=True)
                         
-                            fl.write('<img src="%s" alt="%s" width="%d" height="%d">' % (srcval, altval, span.width, span.height,))
+                            fl.write('<img src="%s" class="%s" alt="%s" width="%d" height="%d">' % (srcval, classval, altval, span.width, span.height,))
                     continue
                 
                 (rstyle, rtext, rlink) = span
