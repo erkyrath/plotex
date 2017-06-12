@@ -233,6 +233,7 @@ class GlkSpecialSpan:
         
         if type == 'image':
             self.image = int(arg['image'])
+            self.url = arg.get('url')
             self.alignment = arg.get('alignment')
             self.alttext = arg.get('alttext')
             val = arg.get('width')
@@ -830,7 +831,7 @@ def write_html_window(win, state, fl):
                     if span.type == 'image':
                         image = state.resourcemap.get(span.image)
                         if image:
-                            srcval = os.path.join(state.resourcemap.dir, image.filename)
+                            srcval = '%s/%s' % ('blorbdata', image.url,)
                             srcval = escape_html(srcval, quotes=True)
                         
                             altval = span.alttext
