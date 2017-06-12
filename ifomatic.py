@@ -226,6 +226,20 @@ class GlkBufferLine:
         self.ls.append(val)
 
 class GlkSpecialSpan:
+    @staticmethod
+    def classforalignment(val):
+        if val == 'inlineup':
+            return 'ImageInlineUp'
+        if val == 'inlinedown':
+            return 'ImageInlineDown'
+        if val == 'inlinecenter':
+            return 'ImageInlineCenter'
+        if val == 'marginleft':
+            return 'ImageMarginLeft'
+        if val == 'marginright':
+            return 'ImageMarginRight'
+        return 'ImageInlineUp'
+
     def __init__(self, arg, type=None):
         if type is None:
             type = arg['special']
@@ -242,21 +256,6 @@ class GlkSpecialSpan:
             val = arg.get('height')
             if val is not None:
                 self.height = int(val)
-
-    def imageclass(self):
-        if self.type != 'image':
-            return
-        if self.alignment == 'inlineup':
-            return 'ImageInlineUp'
-        if self.alignment == 'inlinedown':
-            return 'ImageInlineDown'
-        if self.alignment == 'inlinecenter':
-            return 'ImageInlineCenter'
-        if self.alignment == 'marginleft':
-            return 'ImageMarginLeft'
-        if self.alignment == 'marginright':
-            return 'ImageMarginRight'
-        return 'ImageInlineUp'
 
     def __repr__(self):
         return '<GlkSpecialSpan %s>' % (self.type,)
@@ -849,7 +848,7 @@ def write_html_window(win, state, fl):
                             srcval = '%s/%s' % ('blorbdata', image.url,)
                             srcval = escape_html(srcval, quotes=True)
 
-                            classval = image.imageclass()
+                            classval = GlkSpecialSpan.classforalignment(span.alignment)
                         
                             altval = span.alttext
                             if not altval:
