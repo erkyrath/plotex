@@ -249,7 +249,7 @@ class ResourceMap:
         
         if not dir:
             return
-        mappath = os.path.join(dir, 'resourcemap.js')
+        mappath = os.path.join(dir, 'resourcemap.json')
         if not os.path.exists(mappath):
             return
 
@@ -1078,8 +1078,8 @@ def extract_blorb_data(file, dir):
         os.mkdir(dir)
         
     subprocess.run(['python3', opts.blorbtool, file, 'giload', dir], check=True)
-    if not os.path.exists(os.path.join(dir, 'resourcemap.js')):
-        raise Exception('Could not find resourcemap.js in deblorbed directory')
+    if not os.path.exists(os.path.join(dir, 'resourcemap.json')):
+        raise Exception('Could not find resourcemap.json in deblorbed directory')
 
 def run(gamefile):
     """Process one game (presented as a pathname or IFID string).
