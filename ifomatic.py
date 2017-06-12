@@ -226,9 +226,12 @@ class GlkBufferLine:
         self.ls.append(val)
 
 class GlkSpecialSpan:
-    def __init__(self, arg):
-        self.type = arg['special']
-        if self.type == 'image':
+    def __init__(self, arg, type=None):
+        if type is None:
+            type = arg['special']
+        self.type = type
+        
+        if type == 'image':
             self.image = int(arg['image'])
             self.alignment = arg.get('alignment')
             self.alttext = arg.get('alttext')
@@ -253,11 +256,18 @@ class ResourceMap:
         if not os.path.exists(mappath):
             return
 
-        ### Unfortunately at this point we have to decode JS data
-        ### (not JSON-compatible). I haven't written that yet.
+        fl = open(mappath)
+        rmap = json.load(fl)
+        fl.close()
+
+        for key, desc in rmap.items():
+            match = re.match('pict-([0-9]+)', key)
+            if match:
+                key = int(match.group(1))
+                self.map[key] = GlkSpecialSpan(desc, type='image')
 
     def get(self, num):
-        return map.get(num)
+        return self.map.get(num)
     
 class GameState:
     """The GameState class wraps the connection to the interpreter subprocess
