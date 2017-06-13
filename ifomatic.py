@@ -184,8 +184,7 @@ class GlkWindow:
         self.id = id
         self.type = type
         self.rock = rock
-
-        self.buflines = None
+        
         self.gridheight = None
         self.gridwidth = None
         self.gridlines = None
@@ -193,8 +192,19 @@ class GlkWindow:
             self.gridheight = 0
             self.gridwidth = 0
             self.gridlines = []
+            
+        self.buflines = None
         if self.type == 'buffer':
             self.buflines = []
+            
+        self.graphwidth = None
+        self.graphheight = None
+        self.defcolor = None
+        if self.type == 'graphics':
+            self.graphwidth = 0
+            self.graphheight = 0
+            self.defcolor = '#FFF'
+            
         self.input = None
         self.terminators = {}
         self.reqhyperlink = False
@@ -817,17 +827,22 @@ def write_contents(ifid, gamefile, metadata, dirpath):
 def write_html_window(win, state, fl):
     """Write the contents of one Glk window in screen.html.
     """
+    morestyles = ''
+    
     if win.type == 'grid':
         cssclass = 'GridWindow'
     elif win.type == 'buffer':
         cssclass = 'BufferWindow'
+    elif win.type == 'graphics':
+        cssclass = 'GraphicsWindow'
+        morestyles = ' background-color: %s;' % (win.defcolor,)
     else:
         cssclass = 'UnknownWindow'
 
     posright = state.winwidth - (win.posleft + win.poswidth)
     posbottom = state.winheight - (win.postop + win.posheight)
     
-    fl.write('<div id="window%d" class="WindowFrame %s WindowRock_%d" style="left: %dpx; top: %dpx; right: %dpx; bottom: %dpx">\n' % (win.id, cssclass, win.rock, win.posleft, win.postop, posright, posbottom,))
+    fl.write('<div id="window%d" class="WindowFrame %s WindowRock_%d" style="left: %dpx; top: %dpx; right: %dpx; bottom: %dpx;%s">\n' % (win.id, cssclass, win.rock, win.posleft, win.postop, posright, posbottom, morestyles))
 
     if win.type == 'grid':
         for line in win.gridlines:
@@ -868,6 +883,10 @@ def write_html_window(win, state, fl):
             if not line.ls:
                 fl.write('&nbsp;');
             fl.write('</div>\n')
+
+    if win.type == 'graphics':
+        fl.write('<div class="Canvas" style="width: %dpx; height: %dpx;">' % (win.graphwidth, win.graphheight,))
+        fl.write('</div>\n')
             
     fl.write('</div>\n')
     
