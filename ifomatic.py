@@ -941,19 +941,28 @@ def write_html_window(win, state, fl):
     if win.type == 'graphics':
         fl.write('<div class="Canvas" style="width: %dpx; height: %dpx;">' % (win.graphwidth, win.graphheight,))
         for op in win.graphcmds:
+            
             if op.type == 'fill':
                 fl.write('<div class="FillRect" style="left: %dpx; top: %dpx; width: %dpx; height: %dpx; background-color: %s;"></div>\n' % (op.x, op.y, op.width, op.height, op.color,))
+                
             if op.type == 'image':
                 image = state.resourcemap.get(op.image)
                 srcval = '%s/%s' % ('blorbdata', image.url,)
                 srcval = escape_html(srcval, quotes=True)
+                altval = op.alttext
+                if not altval:
+                    altval = image.alttext
+                if not altval:
+                    altval = 'Image %d' % (op.image,)
+                altval = escape_html(altval, quotes=True)
                 width = op.width
                 height = op.height
                 if width is None:
                     width = image.width
                 if height is None:
                     height = image.height
-                fl.write('<img src="%s" width="%d" height="%d" style="left: %dpx; top: %dpx;">' % (srcval, width, height, op.x, op.y))
+                fl.write('<img src="%s" alt="%s" width="%d" height="%d" style="left: %dpx; top: %dpx;">' % (srcval, altval, width, height, op.x, op.y))
+                
         fl.write('</div>\n')
             
     fl.write('</div>\n')
