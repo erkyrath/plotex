@@ -139,7 +139,12 @@
 
 .GraphicsWindow .Canvas {
   display: block;
+  position: relative;
   background-color: white;
+}
+
+.GraphicsWindow .Canvas .FillRect {
+  position: absolute;
 }
 
 /* The following are the standard Glk styles. */

@@ -927,7 +927,7 @@ def write_html_window(win, state, fl):
         fl.write('<div class="Canvas" style="width: %dpx; height: %dpx;">' % (win.graphwidth, win.graphheight,))
         for op in win.graphcmds:
             if op.type == 'fill':
-                fl.write('<div style="left: %dpx; top: %dpx; width: %dpx; height: %dpx; background-color: %s;"></div>\n' % (op.x, op.y, op.width, op.height, op.color,))
+                fl.write('<div class="FillRect" style="left: %dpx; top: %dpx; width: %dpx; height: %dpx; background-color: %s;"></div>\n' % (op.x, op.y, op.width, op.height, op.color,))
         fl.write('</div>\n')
             
     fl.write('</div>\n')
