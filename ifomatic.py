@@ -262,6 +262,16 @@ class GlkSpecialSpan:
             self.url = arg.get('url')
             self.alignment = arg.get('alignment')
             self.alttext = arg.get('alttext')
+            self.x = None
+            self.y = None
+            self.width = None
+            self.height = None
+            val = arg.get('x')
+            if val is not None:
+                self.x = int(val)
+            val = arg.get('y')
+            if val is not None:
+                self.y = int(val)
             val = arg.get('width')
             if val is not None:
                 self.width = int(val)
@@ -687,7 +697,9 @@ class GameStateRemGlk(GameState):
                 if optype == 'setcolor':
                     win.defcolor = op['color']
                 elif optype == 'fill':
-                    # Both color and geometry are optional here
+                    # Both color and geometry are optional here.
+                    # We make sure all that is specified in the graphcmds
+                    # entry.
                     el = GlkSpecialSpan(op)
                     if el.x is None:
                         ### clear the graphcmds list?
@@ -697,6 +709,9 @@ class GameStateRemGlk(GameState):
                         el.height = win.graphheight
                     if el.color is None:
                         el.color = win.defcolor
+                    win.graphcmds.append(el)
+                elif optype == 'image':
+                    el = GlkSpecialSpan(op)
                     win.graphcmds.append(el)
 
 class ObjPrint:
@@ -928,6 +943,17 @@ def write_html_window(win, state, fl):
         for op in win.graphcmds:
             if op.type == 'fill':
                 fl.write('<div class="FillRect" style="left: %dpx; top: %dpx; width: %dpx; height: %dpx; background-color: %s;"></div>\n' % (op.x, op.y, op.width, op.height, op.color,))
+            if op.type == 'image':
+                image = state.resourcemap.get(op.image)
+                srcval = '%s/%s' % ('blorbdata', image.url,)
+                srcval = escape_html(srcval, quotes=True)
+                width = op.width
+                height = op.height
+                if width is None:
+                    width = image.width
+                if height is None:
+                    height = image.height
+                fl.write('<img src="%s" width="%d" height="%d" style="left: %dpx; top: %dpx;">' % (srcval, width, height, op.x, op.y))
         fl.write('</div>\n')
             
     fl.write('</div>\n')

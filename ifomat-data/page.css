@@ -140,10 +140,15 @@
 .GraphicsWindow .Canvas {
   display: block;
   position: relative;
+  overflow: hidden;
   background-color: white;
 }
 
 .GraphicsWindow .Canvas .FillRect {
+  position: absolute;
+}
+
+.GraphicsWindow .Canvas img {
   position: absolute;
 }
 
