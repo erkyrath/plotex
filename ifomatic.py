@@ -200,10 +200,12 @@ class GlkWindow:
         self.graphwidth = None
         self.graphheight = None
         self.defcolor = None
+        self.graphcmds = None
         if self.type == 'graphics':
             self.graphwidth = 0
             self.graphheight = 0
             self.defcolor = '#FFF'
+            self.graphcmds = []
             
         self.input = None
         self.terminators = {}
@@ -260,6 +262,25 @@ class GlkSpecialSpan:
             self.url = arg.get('url')
             self.alignment = arg.get('alignment')
             self.alttext = arg.get('alttext')
+            val = arg.get('width')
+            if val is not None:
+                self.width = int(val)
+            val = arg.get('height')
+            if val is not None:
+                self.height = int(val)
+
+        if type == 'fill':
+            self.color = arg.get('color')
+            self.x = None
+            self.y = None
+            self.width = None
+            self.height = None
+            val = arg.get('x')
+            if val is not None:
+                self.x = int(val)
+            val = arg.get('y')
+            if val is not None:
+                self.y = int(val)
             val = arg.get('width')
             if val is not None:
                 self.width = int(val)
@@ -567,7 +588,10 @@ class GameStateRemGlk(GameState):
             win.gridwidth = argwidth
                     
         if win.type == 'graphics':
-            pass  ### set up array
+            argheight = arg['graphheight']
+            argwidth = arg['graphwidth']
+            win.graphheight = argheight
+            win.graphwidth = argwidth
 
     def accept_one_content(self, arg):
         id = arg.get('id')
@@ -658,7 +682,22 @@ class GameStateRemGlk(GameState):
                     
         if win.type == 'graphics':
             draw = arg.get('draw', [])
-            pass ###
+            for op in draw:
+                optype = op['special']
+                if optype == 'setcolor':
+                    win.defcolor = op['color']
+                elif optype == 'fill':
+                    # Both color and geometry are optional here
+                    el = GlkSpecialSpan(op)
+                    if el.x is None:
+                        ### clear the graphcmds list?
+                        el.x = 0
+                        el.y = 0
+                        el.width = win.graphwidth
+                        el.height = win.graphheight
+                    if el.color is None:
+                        el.color = win.defcolor
+                    win.graphcmds.append(el)
 
 class ObjPrint:
     NoneType = type(None)
@@ -886,6 +925,9 @@ def write_html_window(win, state, fl):
 
     if win.type == 'graphics':
         fl.write('<div class="Canvas" style="width: %dpx; height: %dpx;">' % (win.graphwidth, win.graphheight,))
+        for op in win.graphcmds:
+            if op.type == 'fill':
+                fl.write('<div style="left: %dpx; top: %dpx; width: %dpx; height: %dpx; background-color: %s;"></div>\n' % (op.x, op.y, op.width, op.height, op.color,))
         fl.write('</div>\n')
             
     fl.write('</div>\n')
