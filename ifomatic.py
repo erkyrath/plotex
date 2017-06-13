@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # IF-o-Matic: run IF games, record HTML screenshots.
-#   Version 0.7
+#   Version 0.8
 #   Andrew Plotkin <erkyrath@eblong.com>
 #   This script is in the public domain.
 
@@ -28,7 +28,6 @@
 # from the same folder.)
 
 ### standardize on open-source fonts
-### handle graphics using unblorbed data
 
 # We use the print() function for Python 2/3 compatibility
 from __future__ import print_function
