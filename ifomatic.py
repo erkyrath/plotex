@@ -618,7 +618,7 @@ class GameStateRemGlk(GameState):
                     linels = GlkBufferLine()
                     win.buflines.append(linels)
                 if textarg.get('flowbreak'):
-                    divel.flowbreak = True
+                    linels.flowbreak = True
                     
                 if content is None or not len(content):
                     continue
@@ -839,7 +839,10 @@ def write_html_window(win, state, fl):
             
     if win.type == 'buffer':
         for line in win.buflines:
-            fl.write('<div class="BufferLine">')
+            cla = 'BufferLine'
+            if line.flowbreak:
+                cla = cla + ' FlowBreak'
+            fl.write('<div class="%s">' % (cla,))
             for span in line.ls:
                 if isinstance(span, GlkSpecialSpan):
                     if span.type == 'image':
