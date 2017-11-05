@@ -1123,7 +1123,9 @@ if (not gamefile):
     sys.exit(-1)
 
 if (opts.terppath):
-    terppath = opts.terppath
+    subls = opts.terppath.split()
+    terppath = subls[0]
+    terpargs = subls[1:]
 if (not terppath):
     print('No interpreter path specified')
     sys.exit(-1)
