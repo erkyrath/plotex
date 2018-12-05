@@ -116,7 +116,17 @@ class Command:
         'func10':0xffffffe6, 'func11':0xffffffe5, 'func12':0xffffffe4,
     }
     
-    def __init__(self, cmd, type='line'):
+    def __init__(self, cmd, type=None):
+        if type is None:
+            # Peel off the "{...}" prefix, if found.
+            match = re.match('{([a-z_]*)}', cmd)
+            if not match:
+                type = 'line'
+                cmd = cmd.strip()
+            else:
+                type = match.group(1)
+                cmd = cmd[match.end() : ].strip()
+            
         self.type = type
         if self.type == 'line':
             self.cmd = cmd
@@ -986,15 +996,7 @@ def parse_tests(filename):
             continue
 
         if (ln.startswith('>')):
-            # Peel off the "{...}" prefix, if found.
-            match = re.match('>{([a-z_]*)}', ln)
-            if not match:
-                cmdtype = 'line'
-                ln = ln[1:].strip()
-            else:
-                cmdtype = match.group(1)
-                ln = ln[match.end() : ].strip()
-            curcmd = Command(ln, type=cmdtype)
+            curcmd = Command(ln[1:])
             curtest.addcmd(curcmd)
             continue
 
