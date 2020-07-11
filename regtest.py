@@ -811,6 +811,13 @@ class GameStateRemGlk(GameState):
                     self.hyperlinkinputwin = input.get('id')
 
 class GameStateRemGlkSingle(GameStateRemGlk):
+    """Wrapper for a RemGlk-based interpreter in single-turn mode. That is,
+    rather than keeping an interpreter open in the background, we launch
+    it once for each input. RemGlk will autosave each turn and autorestore
+    for the next turn.
+    This has the same limitations as GameStateRemGlk.
+    """
+    
     def initialize(self):
         import json
         update = { 'type':'init', 'gen':0,
