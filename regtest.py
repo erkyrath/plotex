@@ -915,21 +915,32 @@ class ObjPrint:
 checkfile_counter = 0
 
 def parse_checkfile(filename):
-    """Load a module containing extra Check subclasses. This is probably
-    a terrible abuse of the import mechanism.
+    """Load a module containing extra Check subclasses. This is a nuisance;
+    programmatic module loading is different in Py2 and Py3, and it's not
+    pleasant in either.
     """
-    import imp
     global checkfile_counter
     
     modname = '_cc_%d' % (checkfile_counter,)
     checkfile_counter += 1
 
-    fl = open(filename, 'U')
+    fl = open(filename)
     try:
-        mod = imp.load_module(modname, fl, filename, ('.py', 'U', imp.PY_SOURCE))
+        if sys.version_info.major == 2:
+            import imp
+            mod = imp.load_module(modname, fl, filename, ('.py', 'U', imp.PY_SOURCE))
+            # For checking the contents...
+            classtype = types.ClassType
+        else:  # Python3
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(modname, filename)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            # For checking the contents...
+            classtype = type
         for key in dir(mod):
             val = getattr(mod, key)
-            if type(val) is types.ClassType and issubclass(val, Check):
+            if type(val) is classtype and issubclass(val, Check):
                 if val is Check:
                     continue
                 if val in checkclasses:
