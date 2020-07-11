@@ -47,6 +47,8 @@ testmap = {}
 testls = []
 totalerrors = 0
 
+singleformat = True ###
+
 popt = optparse.OptionParser()
 
 popt.add_option('-g', '--game',
@@ -491,6 +493,10 @@ class GameState:
     (the pipe in and out streams). It's responsible for sending commands
     to the interpreter, and receiving the game output back.
 
+    (The RemGlkSingle subclass doesn't maintain a running pipe-in and
+    pipe-out, so those arguments are not passed in. Instead, we pass a
+    set of interpreter arguments.)
+
     Currently this class is set up to manage exactly one each of story,
     status, and graphics windows. (A missing window is treated as blank.)
     This is not very general -- we should understand the notion of multiple
@@ -499,9 +505,10 @@ class GameState:
     This is a virtual base class. Subclasses should customize the
     initialize, perform_input, and accept_output methods.
     """
-    def __init__(self, infile, outfile):
+    def __init__(self, infile, outfile, args=None):
         self.infile = infile
         self.outfile = outfile
+        self.terpargs = args
         # Lists of strings
         self.statuswin = []
         self.graphicswin = []
@@ -802,6 +809,51 @@ class GameStateRemGlk(GameState):
                 if input.get('hyperlink'):
                     self.hyperlinkinputwin = input.get('id')
 
+class GameStateRemGlkSingle(GameStateRemGlk):
+    def initialize(self):
+        import json
+        update = { 'type':'init', 'gen':0,
+                   'metrics': GameStateRemGlk.create_metrics(),
+                   'support': [ 'timer', 'hyperlinks', 'graphics', 'graphicswin' ],
+                   }
+        cmd = json.dumps(update)
+        
+        proc = subprocess.Popen(
+            self.terpargs + [ '-singleturn', '--autosave' ],
+            bufsize=0,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        (outdat, errdat) = proc.communicate((cmd+'\n').encode(), timeout=opts.timeout_secs)
+        self.pendingupdate = outdat.decode()
+        
+        self.generation = 0
+        self.windows = {}
+        # This doesn't track multiple-window input the way it should,
+        # nor distinguish hyperlink input state across multiple windows.
+        self.lineinputwin = None
+        self.charinputwin = None
+        self.specialinput = None
+        self.hyperlinkinputwin = None
+
+    def perform_input(self, cmd):
+        import json
+        update = self.construct_remglk_input(cmd)
+        cmd = json.dumps(update)
+        
+        proc = subprocess.Popen(
+            self.terpargs + [ '-singleturn', '-autometrics', '--autosave', '--autorestore' ],
+            bufsize=0,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        (outdat, errdat) = proc.communicate((cmd+'\n').encode(), timeout=opts.timeout_secs)
+        self.pendingupdate = outdat
+        
+    def accept_output(self):
+        import json
+        dat = self.pendingupdate
+        update = json.loads(dat)
+        self.pendingupdate = None
+
+        self.parse_remglk_update(update)
+
 class ObjPrint:
     NoneType = type(None)
     try:
@@ -1057,14 +1109,19 @@ def run(test):
     
     print('* ' + test.name)
     args = [ testterppath ] + testterpargs + [ testgamefile ]
-    proc = subprocess.Popen(args,
-                            bufsize=0,
-                            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    proc = None
+    if not singleformat:
+        proc = subprocess.Popen(
+            args,
+            bufsize=0,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
-    if (not remformat):
+    if not remformat:
         gamestate = GameStateCheap(proc.stdin, proc.stdout)
-    else:
+    elif not singleformat:
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
+    else:
+        gamestate = GameStateRemGlkSingle(None, None, args=args)
 
 
     cmdlist = list_commands(precommands + test.cmds)
@@ -1112,10 +1169,11 @@ def run(test):
         print('%s%s: %s' % (val, ex.__class__.__name__, ex))
 
     gamestate = None
-    proc.stdin.close()
-    proc.stdout.close()
-    proc.kill()
-    proc.poll()
+    if proc:
+        proc.stdin.close()
+        proc.stdout.close()
+        proc.kill()
+        proc.poll()
     
     
 checkclasses.append(RegExpCheck)
