@@ -613,9 +613,48 @@ class GameStateRemGlk(GameState):
         self.charinputwin = None
         self.specialinput = None
         self.hyperlinkinputwin = None
-        
+
     def perform_input(self, cmd):
         import json
+        update = self.construct_remglk_input(cmd)
+        cmd = json.dumps(update)
+        self.infile.write((cmd+'\n').encode())
+        self.infile.flush()
+        
+    def accept_output(self):
+        import json
+        output = bytearray()
+        update = None
+
+        timeout_time = time.time() + opts.timeout_secs
+
+        # Read until a complete JSON object comes through the pipe (or
+        # we time out).
+        # We sneakily rely on the fact that RemGlk always uses dicts
+        # as the JSON object, so it always ends with "}".
+        while (select.select([self.outfile],[],[],opts.timeout_secs)[0] != []):
+            ch = self.outfile.read(1)
+            if ch == b'':
+                # End of stream. Hopefully we have a valid object.
+                dat = output.decode('utf-8')
+                update = json.loads(dat)
+                break
+            output += ch
+            if (output[-1] == ord('}')):
+                # Test and see if we have a valid object.
+                dat = output.decode('utf-8')
+                try:
+                    update = json.loads(dat)
+                    break
+                except:
+                    pass
+                
+        if time.time() >= timeout_time:
+            raise Exception('Timed out awaiting output')
+
+        self.parse_remglk_update(update)
+
+    def construct_remglk_input(self, cmd):
         if cmd.type == 'line':
             if not self.lineinputwin:
                 raise Exception('Game is not expecting line input')
@@ -661,41 +700,9 @@ class GameStateRemGlk(GameState):
         if opts.verbose >= 2:
             ObjPrint.pprint(update)
             print()
-        cmd = json.dumps(update)
-        self.infile.write((cmd+'\n').encode())
-        self.infile.flush()
-        
-    def accept_output(self):
-        import json
-        output = bytearray()
-        update = None
+        return update
 
-        timeout_time = time.time() + opts.timeout_secs
-
-        # Read until a complete JSON object comes through the pipe (or
-        # we time out).
-        # We sneakily rely on the fact that RemGlk always uses dicts
-        # as the JSON object, so it always ends with "}".
-        while (select.select([self.outfile],[],[],opts.timeout_secs)[0] != []):
-            ch = self.outfile.read(1)
-            if ch == b'':
-                # End of stream. Hopefully we have a valid object.
-                dat = output.decode('utf-8')
-                update = json.loads(dat)
-                break
-            output += ch
-            if (output[-1] == ord('}')):
-                # Test and see if we have a valid object.
-                dat = output.decode('utf-8')
-                try:
-                    update = json.loads(dat)
-                    break
-                except:
-                    pass
-                
-        if time.time() >= timeout_time:
-            raise Exception('Timed out awaiting output')
-
+    def parse_remglk_update(self, update):
         # Parse the update object. This is complicated. For the format,
         # see http://eblong.com/zarf/glk/glkote/docs.html
 
@@ -794,7 +801,6 @@ class GameStateRemGlk(GameState):
                     self.charinputwin = input.get('id')
                 if input.get('hyperlink'):
                     self.hyperlinkinputwin = input.get('id')
-
 
 class ObjPrint:
     NoneType = type(None)
