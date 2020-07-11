@@ -39,15 +39,13 @@ import types
 gamefile = None
 terppath = None
 terpargs = []
-remformat = False
+terpformat = 'cheap'    # 'cheap', 'rem', 'remsingle'
 precommands = []
 
 checkclasses = []
 testmap = {}
 testls = []
 totalerrors = 0
-
-singleformat = True ###
 
 popt = optparse.OptionParser()
 
@@ -66,9 +64,12 @@ popt.add_option('-p', '--pre', '--precommand',
 popt.add_option('-c', '--cc', '--checkclass',
                 action='append', dest='checkfiles', metavar='FILE',
                 help='module containing custom Check classes')
+popt.add_option('-f', '--format',
+                action='store', dest='terpformat',
+                help='the interpreter format: cheap, rem, remsingle')
 popt.add_option('-r', '--rem',
                 action='store_true', dest='remformat',
-                help='the interpreter uses RemGlk (JSON) format')
+                help='equivalent to --format rem')
 popt.add_option('-t', '--timeout',
                 dest='timeout_secs', type=float, default=1.0,
                 help='timeout interval (default: 1.0 sec)')
@@ -1005,7 +1006,7 @@ def parse_tests(filename):
     """Parse the test file. This fills out the testls array, and the
     other globals which will be used during testing.
     """
-    global gamefile, terppath, terpargs, remformat
+    global gamefile, terppath, terpargs, terpformat
     
     fl = open(filename)
     curtest = None
@@ -1038,7 +1039,7 @@ def parse_tests(filename):
                     terppath = subls[0]
                     terpargs = subls[1:]
                 elif (key == 'remformat'):
-                    remformat = (val.lower() > 'og')
+                    terpformat = 'rem' if (val.lower() > 'og') else 'cheap'
                 elif (key == 'checkclass'):
                     parse_checkfile(val)
                 else:
@@ -1110,19 +1111,20 @@ def run(test):
     print('* ' + test.name)
     args = [ testterppath ] + testterpargs + [ testgamefile ]
     proc = None
-    if not singleformat:
+    if terpformat != 'remsingle':
         proc = subprocess.Popen(
             args,
             bufsize=0,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
-    if not remformat:
+    if terpformat == 'cheap':
         gamestate = GameStateCheap(proc.stdin, proc.stdout)
-    elif not singleformat:
+    elif terpformat == 'rem':
         gamestate = GameStateRemGlk(proc.stdin, proc.stdout)
-    else:
+    elif terpformat == 'remsingle':
         gamestate = GameStateRemGlkSingle(None, None, args=args)
-
+    else:
+        raise Exception('Unrecognized format: %s' % (terpformat,))
 
     cmdlist = list_commands(precommands + test.cmds)
 
@@ -1142,7 +1144,7 @@ def run(test):
         for cmd in cmdlist:
             if (opts.verbose):
                 if cmd.type == 'line':
-                    if (not remformat):
+                    if terpformat == 'cheap':
                         print('> %s' % (cmd.cmd,))
                     else:
                         # The input line is echoed by the game.
@@ -1207,7 +1209,9 @@ if (not terppath):
     print('No interpreter path specified')
     sys.exit(-1)
 if (opts.remformat):
-    remformat = True
+    terpformat = 'rem'
+if (opts.terpformat):
+    terpformat = opts.terpformat
 
 if (opts.precommands):
     for cmd in opts.precommands:
