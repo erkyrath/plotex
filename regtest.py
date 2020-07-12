@@ -70,6 +70,9 @@ popt.add_option('-f', '--format',
 popt.add_option('-r', '--rem',
                 action='store_true', dest='remformat',
                 help='equivalent to --format rem')
+popt.add_option('-E', '--env',
+                action='append', dest='env',
+                help='environment variables to set before running interpreter')
 popt.add_option('-t', '--timeout',
                 dest='timeout_secs', type=float, default=1.0,
                 help='timeout interval (default: 1.0 sec)')
@@ -828,6 +831,7 @@ class GameStateRemGlkSingle(GameStateRemGlk):
         
         proc = subprocess.Popen(
             self.terpargs + [ '-singleturn', '--autosave' ],
+            env=terpenv,
             bufsize=0,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         (outdat, errdat) = proc.communicate((cmd+'\n').encode(), timeout=opts.timeout_secs)
@@ -849,6 +853,7 @@ class GameStateRemGlkSingle(GameStateRemGlk):
         
         proc = subprocess.Popen(
             self.terpargs + [ '-singleturn', '-autometrics', '--autosave', '--autorestore' ],
+            env=terpenv,
             bufsize=0,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         (outdat, errdat) = proc.communicate((cmd+'\n').encode(), timeout=opts.timeout_secs)
@@ -1121,6 +1126,7 @@ def run(test):
     if terpformat != 'remsingle':
         proc = subprocess.Popen(
             args,
+            env=terpenv,
             bufsize=0,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
@@ -1220,6 +1226,14 @@ if (opts.remformat):
 if (opts.terpformat):
     terpformat = opts.terpformat
 
+terpenv = dict(os.environ)
+if (opts.env):
+    for val in opts.env:
+        key, _, val = val.partition('=')
+        if not val:
+            val = '1'
+        terpenv[key] = val
+    
 if (opts.precommands):
     for cmd in opts.precommands:
         precommands.append(Command(cmd))
