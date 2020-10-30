@@ -588,7 +588,7 @@ class GameStateRemGlk(GameState):
         while i < len(con):
             val = con[i]
             i += 1
-            if type(val) is list:
+            if type(val) is dict:
                 dat.append(val.get('text', ''))
             else:
                 dat.append(con[i])
