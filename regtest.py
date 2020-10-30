@@ -583,7 +583,16 @@ class GameStateRemGlk(GameState):
         con = line.get('content')
         if not con:
             return ''
-        dat = [ val.get('text', '') for val in con ]
+        dat = []
+        i = 0
+        while i < len(con):
+            val = con[i]
+            i += 1
+            if type(val) is list:
+                dat.append(val.get('text', ''))
+            else:
+                dat.append(con[i])
+                i += 1
         return ''.join(dat)
     
     @staticmethod
