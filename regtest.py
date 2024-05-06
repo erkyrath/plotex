@@ -1,5 +1,5 @@
 # RegTest: a really simple IF regression tester.
-#   Version 1.8
+#   Version 1.9
 #   Andrew Plotkin <erkyrath@eblong.com>
 #   This script is in the public domain.
 #
@@ -521,6 +521,9 @@ class GameState:
         self.statuswindat = []
         self.graphicswindat = []
         self.storywindat = []
+        # Gotta keep track of where each status window begins in the
+        # (vertically) agglomerated statuswin[] array
+        self.statuslinestarts = {}
 
     def initialize(self):
         pass
@@ -572,9 +575,10 @@ class GameStateCheap(GameState):
 class GameStateRemGlk(GameState):
     """Wrapper for a RemGlk-based interpreter. This can in theory handle
     any I/O supported by Glk. But the current implementation is limited
-    to line and char input, and no more than one status (grid) and one
-    graphics window. Multiple story (buffer) windows are accepted, but
-    their output for a given turn is agglomerated.
+    to line and char input, and no more than one graphics window.
+    Multiple story (buffer) windows are accepted, but their output for
+    a given turn is agglomerated. The same goes for multiple status (grid)
+    windows.
     """
 
     @staticmethod
@@ -740,20 +744,17 @@ class GameStateRemGlk(GameState):
                 self.windows[id] = win
             
             grids = [ win for win in self.windows.values() if win.get('type') == 'grid' ]
-            if len(grids) > 1:
-                raise Exception('Cannot handle more than one grid window')
-            if not grids:
-                self.statuswin = []
-                self.statuswindat = []
-            else:
-                win = grids[0]
-                height = win.get('gridheight', 0)
-                if height < len(self.statuswin):
-                    self.statuswin = self.statuswin[0:height]
-                    self.statuswindat = self.statuswindat[0:height]
-                while height > len(self.statuswin):
-                    self.statuswin.append('')
-                    self.statuswindat.append([])
+            totalheight = 0
+            self.statuslinestarts.clear()
+            for win in grids:
+                self.statuslinestarts[win.get('id')] = totalheight
+                totalheight += win.get('gridheight', 0)
+            if totalheight < len(self.statuswin):
+                self.statuswin = self.statuswin[0:totalheight]
+                self.statuswindat = self.statuswindat[0:totalheight]
+            while totalheight > len(self.statuswin):
+                self.statuswin.append('')
+                self.statuswindat.append([])
 
         contents = update.get('content')
         if contents is not None:
@@ -784,7 +785,7 @@ class GameStateRemGlk(GameState):
                 elif win.get('type') == 'grid':
                     lines = content.get('lines')
                     for line in lines:
-                        linenum = line.get('line')
+                        linenum = self.statuslinestarts[id] + line.get('line')
                         dat = self.extract_text(line)
                         if linenum >= 0 and linenum < len(self.statuswin):
                             self.statuswin[linenum] = dat
