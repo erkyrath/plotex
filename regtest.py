@@ -745,6 +745,9 @@ class GameStateRemGlk(GameState):
             
             grids = [ win for win in self.windows.values() if win.get('type') == 'grid' ]
             totalheight = 0
+            # This doesn't really work if one status window resizes.
+            # We should be keeping track of them separately and merging
+            # the lists on every update.
             self.statuslinestarts.clear()
             for win in grids:
                 self.statuslinestarts[win.get('id')] = totalheight
