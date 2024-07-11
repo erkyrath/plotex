@@ -890,12 +890,12 @@ class GameStateRemGlkSingle(GameStateRemGlk):
             bufsize=0,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         (outdat, errdat) = proc.communicate((cmd+'\n').encode(), timeout=opts.timeout_secs)
-        self.pendingupdate = outdat
+        self.pendingupdate = outdat.decode()
         
     def accept_output(self):
         import json
         dat = self.pendingupdate
-        #self.assert_json(dat)
+        self.assert_json(dat)
         update = json.loads(dat)
         self.pendingupdate = None
 
