@@ -582,6 +582,23 @@ class GameStateRemGlk(GameState):
     """
 
     @staticmethod
+    def assert_json(dat):
+        # Given a block of text, complain if it starts with lines that
+        # don't look like JSON. Raises an exception contining the offending
+        # lines.
+        # Note that this doesn't check whether the text *is* JSON. (We
+        # might get a partial JSON output.) We just want to make sure that
+        # it starts with an open-brace.
+        dat = dat.lstrip()
+        badlines = []
+        while dat and not dat.startswith('{'):
+            ln, _, dat = dat.partition('\n')
+            badlines.append(ln.rstrip())
+            dat = dat.lstrip()
+        if badlines:
+            raise NotJSONException(*badlines)
+
+    @staticmethod
     def extract_text(line):
         # Extract the text from a line object, ignoring styles.
         con = line.get('content')
@@ -661,12 +678,15 @@ class GameStateRemGlk(GameState):
             if ch == b'':
                 # End of stream. Hopefully we have a valid object.
                 dat = output.decode('utf-8')
+                self.assert_json(dat)
                 update = json.loads(dat)
                 break
             output += ch
             if (output[-1] == ord('}')):
-                # Test and see if we have a valid object.
+                # Test and see if we have a complete valid object.
+                # (It might be partial, in which case we'll try again later.)
                 dat = output.decode('utf-8')
+                self.assert_json(dat)
                 try:
                     update = json.loads(dat)
                     break
@@ -875,6 +895,7 @@ class GameStateRemGlkSingle(GameStateRemGlk):
     def accept_output(self):
         import json
         dat = self.pendingupdate
+        #self.assert_json(dat)
         update = json.loads(dat)
         self.pendingupdate = None
 
@@ -1120,6 +1141,8 @@ def list_commands(ls, res=None, nested=()):
 
 class VitalCheckException(Exception):
     pass
+class NotJSONException(Exception):
+    pass
 
 def run(test):
     """Run a single RegTest.
@@ -1191,6 +1214,12 @@ def run(test):
     except VitalCheckException as ex:
         # An error has already been logged; just fall out.
         pass
+    except NotJSONException as ex:
+        totalerrors += 1
+        val = '*** ' if opts.verbose else ''
+        print('%s%s, interpreter output:' % (val, ex.__class__.__name__))
+        for ln in ex.args:
+            print('  %s' % (ln,))
     except Exception as ex:
         totalerrors += 1
         val = '*** ' if opts.verbose else ''
