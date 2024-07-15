@@ -356,7 +356,10 @@ When writing these input forms in a test, do not put any whitespace between the 
 <dd>Timer input. RegTest does not really perform a delay for timer events; it just tells RemGlk that the timer has fired. (When running a game which uses timer events, you should pass the <code>-support timer</code> option to RemGlk.)
 
 <dt>&gt;{hyperlink} 123
-<dd>Hyperlink input. The value should be a (decimal) integer containing a link value. (When running a game which uses timer events, you should pass the <code>-support hyperlinks</code> option to RemGlk.)
+<dd>Hyperlink input. The value should be a (decimal) integer containing a link value. (When running a game which uses hyperlink events, you should pass the <code>-support hyperlinks</code> option to RemGlk.)
+
+<dt>&gt;{mouse} 11 22
+<dd>Mouse input. The value specifies X and Y (textgrid or graphics coordinates, depending on which window is requesting mouse input).
 
 <dt>&gt;{fileref_prompt} savefile
 <dd>The response to a file prompt (save, restore, transcript, etc). The line should contain a simple filename (no directory, no suffix).
