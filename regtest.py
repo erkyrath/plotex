@@ -163,6 +163,14 @@ class Command:
             except:
                 pass
             self.cmd = cmd
+        elif self.type == 'mouse':
+            try:
+                ls = cmd.split()
+                self.x = int(ls[0])
+                self.y = int(ls[1])
+                self.cmd = '%d %d' % (self.x, self.y,)
+            except:
+                raise Exception('Mouse event must provide numeric x and y')
         elif self.type == 'refresh':
             self.cmd = None
         elif self.type == 'arrange':
@@ -654,6 +662,7 @@ class GameStateRemGlk(GameState):
         self.charinputwin = None
         self.specialinput = None
         self.hyperlinkinputwin = None
+        self.mouseinputwin = None
 
     def perform_input(self, cmd):
         import json
@@ -721,6 +730,12 @@ class GameStateRemGlk(GameState):
             update = { 'type':'hyperlink', 'gen':self.generation,
                        'window':self.hyperlinkinputwin, 'value':cmd.cmd
                        }
+        elif cmd.type == 'mouse':
+            if not self.mouseinputwin:
+                raise Exception('Game is not expecting mouse input')
+            update = { 'type':'mouse', 'gen':self.generation,
+                       'window':self.mouseinputwin, 'x':cmd.x, 'y':cmd.y
+                      }
         elif cmd.type == 'timer':
             update = { 'type':'timer', 'gen':self.generation }
         elif cmd.type == 'arrange':
@@ -829,11 +844,13 @@ class GameStateRemGlk(GameState):
             self.lineinputwin = None
             self.charinputwin = None
             self.hyperlinkinputwin = None
+            self.mouseinputwin = None
         elif inputs is not None:
             self.specialinput = None
             self.lineinputwin = None
             self.charinputwin = None
             self.hyperlinkinputwin = None
+            self.mouseinputwin = None
             for input in inputs:
                 if input.get('type') == 'line':
                     if self.lineinputwin:
@@ -845,6 +862,8 @@ class GameStateRemGlk(GameState):
                     self.charinputwin = input.get('id')
                 if input.get('hyperlink'):
                     self.hyperlinkinputwin = input.get('id')
+                if input.get('mouse'):
+                    self.mouseinputwin = input.get('id')
 
 class GameStateRemGlkSingle(GameStateRemGlk):
     """Wrapper for a RemGlk-based interpreter in single-turn mode. That is,
@@ -878,6 +897,7 @@ class GameStateRemGlkSingle(GameStateRemGlk):
         self.charinputwin = None
         self.specialinput = None
         self.hyperlinkinputwin = None
+        self.mouseinputwin = None
 
     def perform_input(self, cmd):
         import json
