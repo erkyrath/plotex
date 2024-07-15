@@ -168,7 +168,7 @@ class Command:
                 ls = cmd.split()
                 self.x = int(ls[0])
                 self.y = int(ls[1])
-                self.cmd = '%d %d' % (self.x, self.y,)
+                self.cmd = (self.x, self.y,)
             except:
                 raise Exception('Mouse event must provide numeric x and y')
         elif self.type == 'refresh':
