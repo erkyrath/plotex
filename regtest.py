@@ -1217,7 +1217,7 @@ def run(test):
                         print('> %s' % (cmd.cmd,))
                     else:
                         # The input line is echoed by the game.
-                        print('>', end='')
+                        print('> ', end='')
                 else:
                     print('> {%s} %s' % (cmd.type, repr(cmd.cmd),))
             gamestate.perform_input(cmd)
