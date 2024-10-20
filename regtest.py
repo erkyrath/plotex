@@ -78,7 +78,15 @@ popt.add_option('-t', '--timeout',
                 help='timeout interval (default: 1.0 sec)')
 popt.add_option('--vital',
                 action='store_true', dest='vital',
-                help='abort a test on the first error')
+                help='abort a test on the first error. This option affects '
+                    'when the current test stops, but not the execution of '
+                    'the next tests in queue. Can be combined with '
+                    '-s/--stop-on-failed-test.')
+popt.add_option('-s', '--stop-on-failed-test',
+                action='store_true', dest='stop_on_failed_test',
+                help='exit after the first failed test. This differs from '
+                    '--vital, as it doesn\'t affect the execution of the '
+                    'failed test itself. Can be combined with `--vital`.')
 popt.add_option('-v', '--verbose',
                 action='count', dest='verbose', default=0,
                 help='display the transcripts as they run')
@@ -1315,6 +1323,8 @@ for test in testls:
             print(test.name)
         else:
             run(test)
+            if opts.stop_on_failed_test and totalerrors > 0:
+                break
 
 if (not testcount):
     print('No tests performed!')

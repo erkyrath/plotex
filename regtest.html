@@ -240,7 +240,9 @@ These options are available:
 <dt>-r, --rem:
 <dd>The interpreter uses RemGlk (JSON) format.
 <dt>--vital:
-<dd>Abort any test run at the first error.
+<dd>Abort a test on the first error. This option affects when the current test stops, but not the execution of the next tests in queue. Can be combined with -s/--stop-on-failed-test.
+<dt>-s, --stop-on-failed-test:
+<dd>Exit after the first failed test. This differs from --vital, as it doesn't affect the execution of the failed test itself. Can be combined with `--vital`.
 <dt>-v, --verbose:
 <dd>Display the game transcripts as they run.
 </dl>
