@@ -77,8 +77,8 @@ popt.add_option('-t', '--timeout',
                 dest='timeout_secs', type=float, default=1.0,
                 help='timeout interval (default: 1.0 sec)')
 popt.add_option('--vital',
-                action='store_true', dest='vital',
-                help='abort a test on the first error')
+                action='count', dest='vital', default=0,
+                help='abort a test on the first error (or the whole run, if repeated)')
 popt.add_option('-v', '--verbose',
                 action='count', dest='verbose', default=0,
                 help='display the transcripts as they run')
@@ -1321,6 +1321,8 @@ for test in testls:
             print(test.name)
         else:
             run(test)
+            if totalerrors and opts.vital >= 2:
+                break
 
 if (not testcount):
     print('No tests performed!')
