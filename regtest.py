@@ -243,6 +243,7 @@ class Check:
     inverse = False
     instatus = False
     ingraphics = False
+    showverbose = False
 
     @classmethod
     def buildcheck(cla, ln, args):
@@ -253,12 +254,13 @@ class Check:
         self.inverse = args.get('inverse', False)
         self.instatus = args.get('instatus', False)
         self.ingraphics = args.get('ingraphics', False)
+        self.showverbose = opts.verbose
         self.vital = args.get('vital', False) or opts.vital
         self.ln = ln
         
     def __repr__(self):
         val = self.ln
-        if len(val) > 32:
+        if len(val) > 32 and not self.showverbose:
             val = val[:32] + '...'
         lnumflag = '' if self.linenum is None else ':%d' % (self.linenum,)
         invflag = '!' if self.inverse else ''
