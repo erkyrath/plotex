@@ -190,19 +190,19 @@ When you do this, you will see the output:
 * south-from-start
 * in-well-house
 * test-that-fails
-&lt;LiteralCheck "There is a bucket of cheese here..."&gt;: not found
-&lt;RegExpCheck "[xqz]"&gt;: not found
-&lt;LiteralCheck !"Inside Building"&gt;: inverse test should fail
+&lt;LiteralCheck:36 "There is a bucket of cheese here..."&gt;: not found
+&lt;RegExpCheck:37 "[xqz]"&gt;: not found
+&lt;LiteralCheck:38 !"Inside Building"&gt;: inverse test should fail
 * remglk-test
-&lt;LiteralCheck "Inside Building"&gt;: not found
-&lt;LiteralCheck "About Adventure"&gt;: not found
+&lt;LiteralCheck:47 "Inside Building"&gt;: not found
+&lt;LiteralCheck:51 "About Adventure"&gt;: not found
 Exception: Cheap mode only supports line input
 
 FAILED: 6 errors
 </pre>
 
 <p>
-The first two tests show no problems. The other two fail three checks each. When you see failures, you'll probably want to re-run a single test:
+The first two tests show no problems. The other two fail three checks each. (Note that each failure message gives its line number in the test file.) When you see failures, you'll probably want to re-run a single test:
 </p>
 
 <pre>
