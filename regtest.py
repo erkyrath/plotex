@@ -194,8 +194,8 @@ class Command:
         self.checks = []
     def __repr__(self):
         return '<Command "%s">' % (self.cmd,)
-    def addcheck(self, ln):
-        args = {}
+    def addcheck(self, ln, linenum):
+        args = { 'linenum':linenum }
         # First peel off "!" and "{...}" prefixes
         while True:
             match = re.match('!|{[a-z]*}', ln)
@@ -249,6 +249,7 @@ class Check:
         raise Exception('No buildcheck method defined for class: %s' % (cla.__name__,))
     
     def __init__(self, ln, **args):
+        self.linenum = args.get('linenum', None)
         self.inverse = args.get('inverse', False)
         self.instatus = args.get('instatus', False)
         self.ingraphics = args.get('ingraphics', False)
@@ -259,13 +260,14 @@ class Check:
         val = self.ln
         if len(val) > 32:
             val = val[:32] + '...'
+        lnumflag = '' if self.linenum is None else ':%d' % (self.linenum,)
         invflag = '!' if self.inverse else ''
         if self.instatus:
             invflag += '{status}'
         if self.ingraphics:
             invflag += '{graphics}'
         detail = self.reprdetail()
-        return '<%s %s%s"%s">' % (self.__class__.__name__, detail, invflag, val,)
+        return '<%s%s %s%s"%s">' % (self.__class__.__name__, lnumflag, detail, invflag, val,)
 
     def reprdetail(self):
         return ''
@@ -1077,11 +1079,13 @@ def parse_tests(filename):
     fl = open(filename)
     curtest = None
     curcmd = None
+    linenum = 0
 
     while True:
         ln = fl.readline()
         if (not ln):
             break
+        linenum += 1
         if py2_readline:
             ln = ln.decode('utf-8')
         ln = ln.strip()
@@ -1136,7 +1140,7 @@ def parse_tests(filename):
             curtest.addcmd(curcmd)
             continue
 
-        curcmd.addcheck(ln)
+        curcmd.addcheck(ln, linenum)
 
     fl.close()
 
