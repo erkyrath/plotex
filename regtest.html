@@ -210,7 +210,7 @@ python regtest.py TESTFILE -v test-that-fails
 </pre>
 
 <p>
-This runs only the specified test. The -v (or --verbose) argument displays the complete transcript of the test run, with the failures marked, so you can see exactly what went wrong.
+This runs only the specified test. The <code>-v</code> (or <code>--verbose</code>) argument displays the complete transcript of the test run, with the failures marked, so you can see exactly what went wrong.
 </p>
 
 <p>
@@ -240,7 +240,7 @@ These options are available:
 <dt>-r, --rem:
 <dd>The interpreter uses RemGlk (JSON) format.
 <dt>--vital:
-<dd>Abort any test run at the first error.
+<dd>Abort any test run at the first error. If you pass <code>--vital --vital</code>, then <em>all</em> tests will be stopped the first time <em>any</em> of them errors.
 <dt>-v, --verbose:
 <dd>Display the game transcripts as they run.
 </dl>
