@@ -458,6 +458,10 @@ class ImageSpanCheck(Check):
             res.imagevalue = int(match.group(1))
             res.widthvalue = None
             res.heightvalue = None
+            res.widthratiovalue = None
+            res.aspectwidthvalue = None
+            res.aspectheightvalue = None
+            res.winmaxwidthvalue = None
             res.alignmentvalue = None
             res.xvalue = None
             res.yvalue = None
@@ -475,6 +479,17 @@ class ImageSpanCheck(Check):
                         res.widthvalue = int(val)
                     elif key == 'height':
                         res.heightvalue = int(val)
+                    elif key == 'widthratio':
+                        res.widthratiovalue = float(val)
+                    elif key == 'aspectwidth':
+                        res.aspectwidthvalue = float(val)
+                    elif key == 'aspectheight':
+                        res.aspectheightvalue = float(val)
+                    elif key == 'winmaxwidth':
+                        if val == 'null':
+                            res.winmaxwidthvalue = 'null'
+                        else:
+                            res.winmaxwidthvalue = float(val)
                     elif key == 'alignment':
                         res.alignmentvalue = val
                     elif key == 'x':
@@ -485,7 +500,19 @@ class ImageSpanCheck(Check):
                         raise Exception('{image} argument not recognized: %s' % key)
             return res
     def reprdetail(self):
-        return '{image=%d} ' % (self.imagevalue,)
+        pairs = [
+            ('image', self.imagevalue),
+            ('width', self.widthvalue),
+            ('height', self.heightvalue),
+            ('widthratio', self.widthratiovalue),
+            ('aspectwidth', self.aspectwidthvalue),
+            ('aspectheight', self.aspectheightvalue),
+            ('winmaxwidth', self.winmaxwidthvalue),
+            ('x', self.xvalue),
+            ('y', self.yvalue),
+        ]
+        strls = [ ('%s=%s' % (key, val,)) for (key, val) in pairs if val is not None ]
+        return '{%s} ' % (' '.join(strls),)
     def subeval(self, lines):
         for para in lines:
             for line in para:
@@ -495,6 +522,18 @@ class ImageSpanCheck(Check):
                             continue
                         if self.heightvalue is not None and span.get('height') != self.heightvalue:
                             continue
+                        if self.widthratiovalue is not None and span.get('widthratio') != self.widthratiovalue:
+                            continue
+                        if self.aspectwidthvalue is not None and span.get('aspectwidth') != self.aspectwidthvalue:
+                            continue
+                        if self.aspectheightvalue is not None and span.get('aspectheight') != self.aspectheightvalue:
+                            continue
+                        if self.winmaxwidthvalue is not None:
+                            val = self.winmaxwidthvalue
+                            if val == 'null':
+                                val = None
+                            if span.get('winmaxwidth') != val:
+                                continue
                         if self.alignmentvalue is not None and span.get('alignment') != self.alignmentvalue:
                             continue
                         if self.xvalue is not None and span.get('x') != self.xvalue:
@@ -653,7 +692,7 @@ class GameStateRemGlk(GameState):
         import json
         update = { 'type':'init', 'gen':0,
                    'metrics': GameStateRemGlk.create_metrics(),
-                   'support': [ 'timer', 'hyperlinks', 'graphics', 'graphicswin' ],
+                   'support': [ 'timer', 'hyperlinks', 'graphics', 'graphicswin', 'graphicsext' ],
                    }
         cmd = json.dumps(update)
         self.infile.write((cmd+'\n').encode())
@@ -881,7 +920,7 @@ class GameStateRemGlkSingle(GameStateRemGlk):
         import json
         update = { 'type':'init', 'gen':0,
                    'metrics': GameStateRemGlk.create_metrics(),
-                   'support': [ 'timer', 'hyperlinks', 'graphics', 'graphicswin' ],
+                   'support': [ 'timer', 'hyperlinks', 'graphics', 'graphicswin', 'graphicsext' ],
                    }
         cmd = json.dumps(update)
         
