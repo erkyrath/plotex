@@ -470,7 +470,7 @@ class ImageSpanCheck(Check):
                 for val in opts.split(' '):
                     if not val:
                         continue
-                    match = re.match('([a-z]+)=([a-z0-9]+)', val)
+                    match = re.match('([a-z]+)=([a-z0-9.]+)', val)
                     if not match:
                         raise Exception('{image} argument not recognized: %s' % val)
                     key = match.group(1)
