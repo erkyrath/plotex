@@ -429,8 +429,9 @@ Any of these checks may be combined with the modifiers listed above.
 <dt>{image=5}
 <dt>{image=5 x=100 y=200 width=32 height=32}
 <dt>{image=5 width=32 height=32 alignment=inlineup}
+<dt>{image=5 widthratio=1.0 aspectwidth=40 aspectheight=50 winmaxwidth=null}
 <dd>Check whether there is an image with the given number. The rest of the modifiers are all optional; they are checked if present.
-<dd>Remember that images can appear in graphics windows (with x, y, width, and height values) or in the story window (with alignment, width, and height values).
+<dd>Remember that images can appear in graphics windows (with x, y, width, and height values) or in the story window (with alignment, width, height, widthratio, aspectwidth, aspectheight, winmaxwidth values).
 
 <dt>{json key:'value' key2:123 key3:true}
 <dd>Check whether a JSON stanza appears as a span in the output. This allows you to check the raw JSON output for special forms. For example, this checks for the operation of drawing a 10x10 pixel red square in a graphics window:
